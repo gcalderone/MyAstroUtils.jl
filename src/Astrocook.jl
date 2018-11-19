@@ -2,7 +2,7 @@ module Astrocook
 
 using DataFrames, FITSIO, AstroLib, SkyCoords, StructC14N, SortMerge, WCS
 
-import Base.parse, Base.convert, Base.join
+import Base.parse, Base.convert, Base.join, Base.write
 
 
 parse(::Type{FK5Coords{2000, T1}}, ss::T2) where {T1 <: AbstractFloat, T2 <: AbstractString} =
@@ -69,6 +69,20 @@ function convert(::Type{DataFrame}, a::Tuple)
     end
     return df
 end
+
+function write(f::FITSIO.FITS, dfr::DataFrame)
+    #data = Dict{String, Any}()
+    #for name in names(dfr)
+    #    data[string(name)] = dfr[name]
+    #end
+
+    data = Array{Any}(undef, 0)
+    for name in names(dfr)
+         push!(data, dfr[name])
+    end
+    write(f, string.(names(dfr)), data)
+end
+
 
 function join(ra1::Vector{T1}, de1::Vector{T1}, ra2::Vector{T1}, de2::Vector{T1}, thresh_asec::T2; sorted=false) where
     {T1 <: AbstractFloat, T2 <: AbstractFloat}
