@@ -61,6 +61,15 @@ function convert(::Type{DataFrame}, a::Matrix)
     return df
 end
 
+function convert(::Type{DataFrame}, a::Tuple)
+    df = DataFrame()
+    ncol = length(a)
+    for i in 1:ncol
+        df[Symbol("c", i)] = a[i]
+    end
+    return df
+end
+
 function join(ra1::Vector{T1}, de1::Vector{T1}, ra2::Vector{T1}, de2::Vector{T1}, thresh_asec::T2; sorted=false) where
     {T1 <: AbstractFloat, T2 <: AbstractFloat}
     lt(v, i, j) = ((v[i, 2] - v[j, 2]) < 0)
