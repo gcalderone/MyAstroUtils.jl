@@ -4,6 +4,7 @@ using DataFrames, FITSIO, AstroLib, SkyCoords, StructC14N, SortMerge, WCS
 
 import Base.parse, Base.convert, Base.join, Base.write
 
+export columnranges, parsefixedwidth, parsecatalog
 
 parse(::Type{FK5Coords{2000, T1}}, ss::T2) where {T1 <: AbstractFloat, T2 <: AbstractString} =
     parse(FK5Coords{2000, T1}, tuple(split(ss)...))
@@ -14,7 +15,7 @@ function parse(::Type{FK5Coords{2000, T1}}, ss::NTuple{2, T2}) where {T1 <: Abst
         sign = 1.
         (s[1] == '-')  &&  (s = s[2:end]; sign = -1.)
         (s[1] == '+')  &&  (s = s[2:end])
-        
+
         if occursin(":", s)
             @assert length(s) > 8 "Invalid string input"
             d1 = Meta.parse(s[1:2])
@@ -97,6 +98,128 @@ function join(ra1::Vector{T1}, de1::Vector{T1}, ra2::Vector{T1}, de2::Vector{T1}
         return 999
     end
     return sortmerge([ra1 de1], [ra2 de2], thresh_asec, lt1=lt, lt2=lt, sd=sd, sorted=sorted)
+end
+
+function columnranges(sdesc::Vector{T}) where T <: AbstractString
+    count = 0
+    pos = Vector{Int}()
+    chr = Vector{Char}()
+    for line in sdesc
+        while length(pos) < length(line)
+            push!(pos, count)
+            push!(chr, line[length(pos)])
+        end
+        count += 1
+        for i in 1:length(line)
+            if chr[i] == line[i]
+                pos[i] += 1
+            end
+        end
+    end
+    pos = findall(pos .== count)
+    (pos[  1] == 1)            ||  (prepend!(pos, 1))
+    (pos[end] == length(chr))  ||  (push!(pos, length(chr)))
+
+    act = Vector{Int}()
+    for i in 1:length(pos)-1
+        if pos[i]+1 != pos[i+1]
+            push!(act, pos[i])
+        end
+    end
+    (act[end] == pos[end])  ||  (push!(act, pos[end]))
+
+    out = Vector{UnitRange{Int}}()
+    for i in 1:length(act)-1
+        push!(out, UnitRange{Int}(act[i], act[i+1]-1))
+    end
+    return out
+end
+
+
+parsefixedwidth(input::Vector{String}) = parsefixedwidth(input, columnranges(input))
+function parsefixedwidth(input::Vector{String}, ranges::Vector{UnitRange{Int}})
+    data = Vector{Vector{String}}(undef, length(ranges))
+    for i in 1:length(ranges)-1
+        data[i] = getindex.(input, Ref(ranges[i]))
+    end
+    tmp = Vector{String}(undef, length(input))
+    for i in 1:length(input)
+        tmp[i] = input[i][ranges[end][1]:end]
+    end
+    data[end] = tmp
+    return data
+end
+
+
+function parsecatalog(sdesc::Vector{String}, input::Vector{String})
+    # Parse description
+    sdesc = sdesc[findall(strip.(sdesc) .!= "")]
+    data = parsefixedwidth(sdesc)
+
+    ranges = Vector{UnitRange{Int}}()
+    for l in data[1]
+        r = split(l, '-')
+        (length(r) == 1)  &&  (r = [r[1], r[1]])
+        push!(ranges, UnitRange{Int}(parse(Int, r[1]), parse(Int, r[2])))
+    end
+
+    types = Vector{DataType}()
+    for l in data[2]
+        t = strip(l)[1]
+        if t == 'A'
+            push!(types, String)
+        elseif t == 'I'
+            push!(types, Int)
+        elseif t == 'F'
+            push!(types, Float64)
+        else
+            error("Unsupported data type: " * t)
+        end
+    end
+
+    units = Vector{String}()
+    for l in data[3]; push!(units, strip(l)); end
+
+    names = Vector{String}()
+    for l in data[4]; push!(names, strip(l)); end
+
+    comments = Vector{String}()
+    for l in data[5]; push!(comments, strip(l)); end
+
+    # Parse data
+    data = parsefixedwidth(input, ranges)
+    nrows = length(data[1])
+
+    df = DataFrame()
+    icol = Vector{Union{Missing,Int}}(missing, nrows)
+    fcol = Vector{Union{Missing,Float64}}(missing, nrows)
+    sym = Symbol.(names)
+    for i in 1:length(ranges)
+        s = data[i]
+        if types[i] == String
+            df[sym[i]] = s
+        else
+            j = findall(.!occursin.(Ref(r"^ *$"), s))
+            if types[i] == Int
+                if length(j) == nrows
+                    df[sym[i]] = parse.(Int, s)
+                else
+                    icol .= missing
+                    icol[j] .= parse.(Int, s[j])
+                    df[sym[i]] = icol
+                end
+            elseif types[i] == Float64
+                if length(j) == nrows
+                    df[sym[i]] = parse.(Float64, s)
+                else
+                    fcol .= missing
+                    fcol[j] .= parse.(Float64, s[j])
+                    df[sym[i]] = fcol
+                end
+            end
+        end
+    end
+    return df
 end
 
 
