@@ -1,6 +1,7 @@
 julia 0.7
 FITSIO v0.12
 AstroLib 0.4
+DataFrames 0.14
 SkyCoords 0.2
 StructC14N 0.2.0
 SortMerge 1.0.0
