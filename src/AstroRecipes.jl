@@ -1,4 +1,4 @@
-module Astrocook
+module AstroRecipes
 
 using DataFrames, FITSIO, AstroLib, SkyCoords, StructC14N, SortMerge, WCS
 
