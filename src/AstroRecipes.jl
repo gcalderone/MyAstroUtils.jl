@@ -36,7 +36,8 @@ end
 
 
 
-function convert(::Type{DataFrame}, hdu::FITSIO.TableHDU)
+convert(::Type{DataFrame}, hdu::FITSIO.ImageHDU) = error("Can not convert an ImageHDU extension to a DataFrame")
+function convert(::Type{DataFrame}, hdu::FITSIO.HDU)
     fld = FITSIO.colnames(hdu)
     out = DataFrame()
     for i in 1:length(fld)
