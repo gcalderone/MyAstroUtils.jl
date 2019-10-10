@@ -4,7 +4,7 @@ using DataFrames, FITSIO, AstroLib, SkyCoords, StructC14N, SortMerge, WCS
 
 import Base.parse, Base.convert, Base.join, Base.write
 
-export columnranges, parsefixedwidth, parsecatalog
+export columnranges, parsefixedwidth, parsecatalog, substMissing, showrec
 
 parse(::Type{FK5Coords{2000, T1}}, ss::T2) where {T1 <: AbstractFloat, T2 <: AbstractString} =
     parse(FK5Coords{2000, T1}, tuple(split(ss)...))
@@ -38,15 +38,15 @@ end
 
 convert(::Type{DataFrame}, hdu::FITSIO.ImageHDU) = error("Can not convert an ImageHDU extension to a DataFrame")
 function convert(::Type{DataFrame}, hdu::FITSIO.HDU)
-    fld = FITSIO.colnames(hdu)
+    fld = join.(split.(FITSIO.colnames(hdu), '.'), '_')
     out = DataFrame()
     for i in 1:length(fld)
-        tmp = read(hdu, fld[i])
+        tmp = read(hdu, (FITSIO.colnames(hdu))[i])
         if ndims(tmp) == 1
-            out[Symbol(fld[i])] = tmp
+            out[!, Symbol(fld[i])] = tmp
         else
             for j in 1:(size(tmp))[1]
-                out[Symbol(fld[i] * string(j))] = tmp[j,:]
+                out[!, Symbol(fld[i] * string(j))] = tmp[j,:]
             end
         end
     end
@@ -67,7 +67,7 @@ function convert(::Type{DataFrame}, a::Tuple)
     df = DataFrame()
     ncol = length(a)
     for i in 1:ncol
-        df[Symbol("c", i)] = a[i]
+        df[!, Symbol("c", i)] = a[i]
     end
     return df
 end
@@ -80,14 +80,14 @@ function write(f::FITSIO.FITS, dfr::DataFrame)
 
     data = Array{Any}(undef, 0)
     for name in names(dfr)
-         push!(data, dfr[name])
+         push!(data, dfr[:,name])
     end
     write(f, string.(names(dfr)), data)
 end
 
 
-function join(ra1::Vector{T1}, de1::Vector{T1}, ra2::Vector{T1}, de2::Vector{T1}, thresh_asec::T2; sorted=false) where
-    {T1 <: AbstractFloat, T2 <: AbstractFloat}
+function join(ra1::Vector{T1}, de1::Vector{T1}, ra2::Vector{T2}, de2::Vector{T2}, thresh_asec::T3; sorted=false) where
+    {T1 <: AbstractFloat, T2 <: AbstractFloat, T3 <: AbstractFloat}
     lt(v, i, j) = ((v[i, 2] - v[j, 2]) < 0)
     function sd(c1, c2, i1, i2, thresh_asec)
         thresh_deg = thresh_asec / 3600. # [deg]
@@ -198,30 +198,85 @@ function parsecatalog(sdesc::Vector{String}, input::Vector{String})
     for i in 1:length(ranges)
         s = data[i]
         if types[i] == String
-            df[sym[i]] = s
+            df[!,sym[i]] = s
         else
             j = findall(.!occursin.(Ref(r"^ *$"), s))
             if types[i] == Int
                 if length(j) == nrows
-                    df[sym[i]] = parse.(Int, s)
+                    df[!,sym[i]] = parse.(Int, s)
                 else
                     icol .= missing
                     icol[j] .= parse.(Int, s[j])
-                    df[sym[i]] = icol
+                    df[!,sym[i]] = icol
                 end
             elseif types[i] == Float64
                 if length(j) == nrows
-                    df[sym[i]] = parse.(Float64, s)
+                    df[!,sym[i]] = parse.(Float64, s)
                 else
                     fcol .= missing
                     fcol[j] .= parse.(Float64, s[j])
-                    df[sym[i]] = fcol
+                    df[!,sym[i]] = fcol
                 end
             end
         end
     end
     return df
 end
+
+function substMissing(df::DataFrame; mstring="NULL", mint=-999, mfloat=NaN)
+    (nr, nc) = size(df)
+    out = DataFrame()
+    for icol in 1:nc
+        tmp = df[icol]
+        ig = .!ismissing.(tmp)
+        im =   ismissing.(tmp)
+
+        tt = Any
+        for v in tmp
+            if !ismissing(v)
+                tt = typeof(v)
+                break
+            end
+        end
+        if tt == Any
+            tt = (names(df))[icol]
+            println("All values in column $tt are missing. Skipping column...")
+            continue
+        end
+
+        col = Vector{tt}(undef, length(tmp))
+        col[ig] .= tmp[ig]
+
+        if tt <: AbstractString
+            col[im] .= mstring
+        elseif tt <: Integer
+            col[im] .= mint
+        elseif tt <: AbstractFloat
+            col[im] .= mfloat
+        else
+            if length(im) > 0
+                err = "Can't handle type: $tt"
+                println("col=$icol")
+                error(err)
+            end
+        end
+
+        out[(names(df))[icol]] = col
+    end
+    return out
+end
+
+substMissing(v::Array{Float64,N}; mfloat=NaN) where N = v
+function substMissing(v::Array{Union{Missing, Float64},N}; mfloat=NaN) where N
+    o = deepcopy(v)
+    i = findall(ismissing.(v))
+    o[i] .= NaN
+    return o
+end
+
+
+showrec(df::DataFrameRow) = 
+    show(DataFrame(field=names(df), value=[values(df)...]), allrows=true, allcols=true)
 
 
 end # module
