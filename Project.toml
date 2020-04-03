@@ -1,0 +1,4 @@
+name = "AstroRecipes"
+uuid = "e2d25571-835e-4748-919c-7dd32f5092b3"
+authors = ["Giorgio Calderone <giorgio.calderone@gmail.com>"]
+version = "0.1.0"

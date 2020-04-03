@@ -4,7 +4,7 @@ using DataFrames, FITSIO, AstroLib, SkyCoords, StructC14N, SortMerge, WCS
 
 import Base.parse, Base.convert, Base.join, Base.write
 
-export columnranges, parsefixedwidth, parsecatalog, substMissing, showrec
+export columnranges, parsefixedwidth, parsecatalog, substMissing, showrec, gaussian
 
 parse(::Type{FK5Coords{2000, T1}}, ss::T2) where {T1 <: AbstractFloat, T2 <: AbstractString} =
     parse(FK5Coords{2000, T1}, tuple(split(ss)...))
@@ -45,9 +45,11 @@ function convert(::Type{DataFrame}, hdu::FITSIO.HDU)
         if ndims(tmp) == 1
             out[!, Symbol(fld[i])] = tmp
         else
-            for j in 1:(size(tmp))[1]
-                out[!, Symbol(fld[i] * string(j))] = tmp[j,:]
+            app = DataFrame(Symbol(fld[i])=>Vector{typeof(tmp[1,1])}[])
+            for j in 1:(size(tmp))[2]
+                push!(app, [tmp[:,j]])
             end
+            out = hcat(out, app)
         end
     end
     return out
@@ -86,7 +88,7 @@ function write(f::FITSIO.FITS, dfr::DataFrame)
 end
 
 
-function join(ra1::Vector{T1}, de1::Vector{T1}, ra2::Vector{T2}, de2::Vector{T2}, thresh_asec::T3; sorted=false) where
+function join(ra1::Vector{T1}, de1::Vector{T1}, ra2::Vector{T2}, de2::Vector{T2}, thresh_asec::T3; sorted=false, quiet=false) where
     {T1 <: AbstractFloat, T2 <: AbstractFloat, T3 <: AbstractFloat}
     lt(v, i, j) = ((v[i, 2] - v[j, 2]) < 0)
     function sd(c1, c2, i1, i2, thresh_asec)
@@ -98,7 +100,7 @@ function join(ra1::Vector{T1}, de1::Vector{T1}, ra2::Vector{T2}, de2::Vector{T2}
         (dd <= thresh_asec)  &&  (return 0)
         return 999
     end
-    return sortmerge([ra1 de1], [ra2 de2], thresh_asec, lt1=lt, lt2=lt, sd=sd, sorted=sorted)
+    return sortmerge([ra1 de1], [ra2 de2], thresh_asec, lt1=lt, lt2=lt, sd=sd, sorted=sorted, quiet=quiet)
 end
 
 function columnranges(sdesc::Vector{T}) where T <: AbstractString
@@ -275,8 +277,12 @@ function substMissing(v::Array{Union{Missing, Float64},N}; mfloat=NaN) where N
 end
 
 
-showrec(df::DataFrameRow) = 
+showrec(df::DataFrameRow) =
     show(DataFrame(field=names(df), value=[values(df)...]), allrows=true, allcols=true)
 
+
+function gaussian(x, mean=0., sigma=1.)
+    return @. (1 / sqrt(2pi) / sigma) * exp(-((x - mean) / sigma)^2 / 2)
+end
 
 end # module
