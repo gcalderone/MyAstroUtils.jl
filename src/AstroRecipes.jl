@@ -100,6 +100,10 @@ function join(ra1::Vector{T1}, de1::Vector{T1}, ra2::Vector{T2}, de2::Vector{T2}
         (dd <= thresh_asec)  &&  (return 0)
         return 999
     end
+    @assert all(isfinite.(ra1))
+    @assert all(isfinite.(de1))
+    @assert all(isfinite.(ra2))
+    @assert all(isfinite.(de2))
     return sortmerge([ra1 de1], [ra2 de2], thresh_asec, lt1=lt, lt2=lt, sd=sd, sorted=sorted, quiet=quiet)
 end
 
