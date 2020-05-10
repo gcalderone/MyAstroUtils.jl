@@ -82,7 +82,11 @@ function write(f::FITSIO.FITS, dfr::DataFrame)
 
     data = Array{Any}(undef, 0)
     for name in names(dfr)
-         push!(data, dfr[:,name])
+        if eltype(dfr[:, name]) == Symbol
+            push!(data, string.(dfr[:,name]))
+        else
+            push!(data, dfr[:,name])
+        end
     end
     write(f, string.(names(dfr)), data)
 end
