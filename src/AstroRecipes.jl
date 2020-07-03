@@ -2,7 +2,7 @@ module AstroRecipes
 
 using DataFrames, FITSIO, AstroLib, SkyCoords, StructC14N, SortMerge, WCS, ODBC, Printf, Healpix
 
-import DataFrames.DataFrame, Base.write
+import DataFrames.DataFrame, Base.write, DBInterface.execute
 
 export gaussian, showv, ra2string, fits2df, dec2string, xmatch, df2dbtable, parsecatalog, pixelized_area
 
@@ -80,10 +80,8 @@ function xmatch(ra1::Vector{T1}, de1::Vector{T1},
 end
 
 
-
-function df2dbtable(conn, _df, name; drop=true)
+function df2dbtable(_df::DataFrame)
     df = deepcopy(_df)
-
     colnames = Vector{Symbol}()
     for name in names(df)
         if isa(df[1, name], AbstractVector)
@@ -138,26 +136,43 @@ function df2dbtable(conn, _df, name; drop=true)
         end
     end
 
+    sql = "`" .* string.(names(df)) .* "` " .* dbtype
+    return (sql, df)
+end
+
+
+function df2dbtable(conn::ODBC.Connection, _df::DataFrame, name; drop=true)
+    (sql, df) = df2dbtable(_df)
+
     if drop
-        sql = "DROP TABLE IF EXISTS $name"
+        DBInterface.execute(conn, "DROP TABLE IF EXISTS $name")
+        sql = "CREATE TABLE IF NOT EXISTS $name (" * join(sql, ", ") * ")"
+        #@info sql
         DBInterface.execute(conn, sql)
     end
-    sql = "CREATE TABLE IF NOT EXISTS $name (" *
-        join("`" .* string.(names(df)) .* "` " .* dbtype, ", ") * ")"
-    #@info sql
-    DBInterface.execute(conn, sql)
 
-    ODBC.transaction(conn) do
-        params = chop(repeat("?,", ncol(df)))
-        stmt = DBInterface.prepare(conn, "INSERT INTO $name VALUES ($params)")
-        N = nrow(df)
-        T0 = Base.time_ns()
-        for (i, row) in enumerate(Tables.rows(df))
-            if mod(i, 100) == 0
-                @printf("Done: %6.1f%%   (%.4g records/sec)\r", 100 * i / N, 1e9 * i / (Base.time_ns() - T0))
-            end
-            DBInterface.execute(stmt, Tables.Row(row))
+    params = join(repeat("?", ncol(df)), ",")
+    stmt = DBInterface.prepare(conn, "INSERT INTO $name VALUES ($params)")
+    DBInterface.execute(conn, stmt, df)
+    end
+end
+
+
+function DBInterface.execute(conn::ODBC.Connection, stmt::ODBC.Statement, df::DataFrame)
+     ODBC.transaction(conn) do
+        DBInterface.execute(stmt, df)
+     end
+end
+
+
+function DBInterface.execute(stmt::ODBC.Statement, df::DataFrame)
+    N = nrow(df)
+    T0 = Base.time_ns()
+    for (i, row) in enumerate(Tables.rows(df))
+        if mod(i, 100) == 0
+            @printf("Done: %6.1f%%   (%.4g records/sec)\r", 100 * i / N, 1e9 * i / (Base.time_ns() - T0))
         end
+        DBInterface.execute(stmt, Tables.Row(row))
     end
     println()
 end
