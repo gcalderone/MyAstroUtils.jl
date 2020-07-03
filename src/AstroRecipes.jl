@@ -2,7 +2,7 @@ module AstroRecipes
 
 using DataFrames, FITSIO, AstroLib, SkyCoords, StructC14N, SortMerge, WCS, ODBC, Printf, Healpix
 
-import DataFrames.DataFrame, Base.write, DBInterface.execute
+import DataFrames.DataFrame, Base.write, ODBC.DBInterface.execute
 
 export gaussian, showv, ra2string, fits2df, dec2string, xmatch, df2dbtable, parsecatalog, pixelized_area
 
@@ -154,11 +154,10 @@ function df2dbtable(conn::ODBC.Connection, _df::DataFrame, name; drop=true)
     params = join(repeat("?", ncol(df)), ",")
     stmt = DBInterface.prepare(conn, "INSERT INTO $name VALUES ($params)")
     DBInterface.execute(conn, stmt, df)
-    end
 end
 
 
-function DBInterface.execute(conn::ODBC.Connection, stmt::ODBC.Statement, df::DataFrame)
+function execute(conn::ODBC.Connection, stmt::ODBC.Statement, df::DataFrame)
      ODBC.transaction(conn) do
         DBInterface.execute(stmt, df)
      end
