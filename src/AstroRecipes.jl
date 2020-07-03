@@ -144,16 +144,22 @@ function df2dbtable(conn, _df, name; drop=true)
     end
     sql = "CREATE TABLE IF NOT EXISTS $name (" *
         join("`" .* string.(names(df)) .* "` " .* dbtype, ", ") * ")"
-    @info sql
+    #@info sql
     DBInterface.execute(conn, sql)
 
     ODBC.transaction(conn) do
         params = chop(repeat("?,", ncol(df)))
         stmt = DBInterface.prepare(conn, "INSERT INTO $name VALUES ($params)")
+        N = nrow(df)
+        T0 = Base.time_ns()
         for (i, row) in enumerate(Tables.rows(df))
+            if mod(i, 100) == 0
+                @printf("Done: %6.1f%%   (%.4g records/sec)\r", 100 * i / N, 1e9 * i / (Base.time_ns() - T0))
+            end
             DBInterface.execute(stmt, Tables.Row(row))
         end
     end
+    println()
 end
 
 
