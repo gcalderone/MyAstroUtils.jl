@@ -37,6 +37,8 @@ function write(f::FITSIO.FITS, dfr::DataFrame)
     for name in names(dfr)
         if eltype(dfr[:, name]) == Symbol
             push!(data, string.(dfr[:,name]))
+        elseif eltype(dfr[:, name]) == String
+            push!(data, string.(dfr[:,name]))
         else
             push!(data, dfr[:,name])
         end
