@@ -1,11 +1,12 @@
 using DataFrames, ODBC, ProgressMeter
 
-export dbconnection, DBtransaction, DBstmt, DB, upload_table
+export DBtransaction, DBprepare, DB, upload_table
 
 
 const DBConn = Vector{ODBC.Connection}()
+current_odbc_conn() = DBConn[end]
 
-function dbconnection(conn_string; user=nothing, pass=nothing)
+function set_odbc_connection(conn_string; user=nothing, pass=nothing)
     if !isnothing(user)  &&  isnothing(pass)
         pass = askpass("Enter password for DB user $user")
     end
@@ -17,17 +18,18 @@ function dbconnection(conn_string; user=nothing, pass=nothing)
 end
 
 
-DBtransaction(f) = ODBC.transaction(f, DBConn[end])
-DBstmt(sql::AbstractString) = DBInterface.prepare(DBConn[end], string(sql))
+DBtransaction(f) = ODBC.transaction(f, current_odbc_conn())
+DBprepare(sql::AbstractString) = DBInterface.prepare(current_odbc_conn(), string(sql))
 
-DB(sql::AbstractString) = DBInterface.execute(DBConn[end], string(sql))
-DB(stmt::ODBC.Statement, params...) = DBInterface.execute(stmt, params)
+DB(sql::AbstractString) = DataFrame(DBInterface.execute(current_odbc_conn(), string(sql)))
+DB(stmt::ODBC.Statement, params...) = DataFrame(DBInterface.execute(stmt, params))
 function DB(stmt::ODBC.Statement, df::DataFrame)
     DBtransaction() do
         @showprogress 0.5 for (i, row) in enumerate(Tables.rows(df))
             DBInterface.execute(stmt, Tables.Row(row))
         end
     end
+    nothing
 end
 
 
@@ -92,15 +94,15 @@ function prepare_columns(_df::DataFrame)
 end
 
 
-function upload_table(_df::DataFrame, name; drop=true)
+function upload_table(_df::DataFrame, tbl_name; drop=true)
     (sql, df) = prepare_columns(_df)
 
     if drop
-        DB("DROP TABLE IF EXISTS $name")
-        DB("CREATE TABLE $name (" * join(sql, ", ") * ")")
+        DB("DROP TABLE IF EXISTS $tbl_name")
+        DB("CREATE TABLE $tbl_name (" * join(sql, ", ") * ")")
     end
     params = join(repeat("?", ncol(df)), ",")
-    stmt = DBstmt("INSERT INTO $name VALUES ($params)")
+    stmt = DBprepare("INSERT INTO $tbl_name VALUES ($params)")
     DB(stmt, df)
 end
 
