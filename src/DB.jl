@@ -1,29 +1,32 @@
-using DataFrames, ODBC, ProgressMeter
+using DataFrames, MySQL, DBInterface, ProgressMeter
 
 export DBtransaction, DBprepare, DB, upload_table
 
 
-const DBConn = Vector{ODBC.Connection}()
-current_odbc_conn() = DBConn[end]
+const DBConn = Vector{DBInterface.Connection}()
+current_db_conn() = DBConn[end]
 
-function set_odbc_connection(conn_string; user=nothing, pass=nothing)
-    if !isnothing(user)  &&  isnothing(pass)
-        pass = askpass("Enter password for DB user $user")
+function set_db_connection(host; user=nothing, passwd=nothing)
+    if !isnothing(user)  &&  isnothing(passwd)
+        passwd = askpass("Enter password for DB user $user")
     end
-    conn = ODBC.Connection(conn_string *
-                           (isnothing(user)  ?  ""  :  ";USER=" * user * (
-                               isnothing(pass)  ?  ""  :  ";PWD=" * pass)))
+    conn = DBInterface.connect(MySQL.Connection, host, user, passwd)
+
+    # "Driver={MariaDB};SERVER=127.0.0.1"
+    #conn = ODBC.Connection(host *
+    #                       (isnothing(user)  ?  ""  :  ";USER=" * user * (
+    #                           isnothing(passwd)  ?  ""  :  ";PWD=" * passwd)))
     push!(DBConn, conn)
     nothing
 end
 
 
-DBtransaction(f) = ODBC.transaction(f, current_odbc_conn())
-DBprepare(sql::AbstractString) = DBInterface.prepare(current_odbc_conn(), string(sql))
+DBtransaction(f) = MySQL.transaction(f, current_db_conn())
+DBprepare(sql::AbstractString) = DBInterface.prepare(current_db_conn(), string(sql))
 
-DB(sql::AbstractString) = DataFrame(DBInterface.execute(current_odbc_conn(), string(sql)))
-DB(stmt::ODBC.Statement, params...) = DataFrame(DBInterface.execute(stmt, params))
-function DB(stmt::ODBC.Statement, df::DataFrame)
+DB(sql::AbstractString) = DataFrame(DBInterface.execute(current_db_conn(), string(sql)))
+DB(stmt, params...) = DataFrame(DBInterface.execute(stmt, params))
+function DB(stmt, df::DataFrame)
     DBtransaction() do
         @showprogress 0.5 for (i, row) in enumerate(Tables.rows(df))
             DBInterface.execute(stmt, Tables.Row(row))
@@ -78,7 +81,9 @@ function prepare_columns(_df::DataFrame)
         elseif t == Int64
             push!(dbtype, "BIGINT SIGNED $notnull")
         elseif t == Bool
-            push!(dbtype, "BOOLEAN $notnull")
+            # MySQL.jl package does not yet support INSERT preparaed statements with BOOLEAN data type
+            push!(dbtype, "TINYINT SIGNED $notnull")
+            df[!, i] .= Int8.(df[!, i])
         elseif t == Symbol
             df[!, i] .= string(df[:, i])
             push!(dbtype, "ENUM(" * join("'" .* sort(unique(string.(df[:, i]))) .* "'", ", ") * ") $notnull")
