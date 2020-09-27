@@ -7,6 +7,9 @@ const DBConn = Vector{DBInterface.Connection}()
 current_db_conn() = DBConn[end]
 
 function set_db_connection(host; user=nothing, passwd=nothing)
+    DBInterface.close!.(DBConn)
+    empty!(DBConn)
+
     if !isnothing(user)  &&  isnothing(passwd)
         passwd = askpass("Enter password for DB user $user")
     end
