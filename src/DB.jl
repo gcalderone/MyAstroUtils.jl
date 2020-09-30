@@ -1,6 +1,6 @@
 using DataFrames, MySQL, DBInterface, ProgressMeter
 
-export DBtransaction, DBprepare, DB, upload_table
+export DBtransaction, DBprepare, DB, DBsource, upload_table
 
 
 const DBConn = Vector{DBInterface.Connection}()
@@ -36,6 +36,45 @@ function DB(stmt, df::DataFrame)
         end
     end
     nothing
+end
+
+
+function DBsource(file::AbstractString, subst::Vararg{Pair{String,String}, N}) where N
+    delim = ";"
+    sql = ""
+    for line in readlines(file)
+        if !isnothing(match(r"delimiter"i, line))
+            if line == "DELIMITER ;"
+                delim = ";"
+            elseif line == "DELIMITER //"
+                delim = "//"
+            else
+                error("Unexpected delimiter statement: $line")
+            end
+        else
+            if !isnothing(match(Regex(delim), line))
+                s = string.(strip.(split(line, delim)))
+                @assert length(s) == 2 "Too many delimiters in one line: $line"
+                sql *= s[1]
+                for r in subst
+                    sql = replace(sql, r)
+                end
+                println(sql)
+                DB(sql)
+                sql = ""
+                (s[2] != "")  &&  (sql = s[2] * "\n")
+            else
+                sql *= line * "\n"
+            end
+        end
+    end
+    if strip(sql) != ""
+        for r in subst
+            sql = replace(sql, r)
+        end
+        println(sql)
+        DB(sql)
+    end
 end
 
 
