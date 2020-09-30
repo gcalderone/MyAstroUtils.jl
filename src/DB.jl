@@ -28,7 +28,7 @@ DBtransaction(f) = MySQL.transaction(f, current_db_conn())
 DBprepare(sql::AbstractString) = DBInterface.prepare(current_db_conn(), string(sql))
 
 DB(sql::AbstractString) = DataFrame(DBInterface.execute(current_db_conn(), string(sql)))
-DB(stmt, params...) = DataFrame(DBInterface.execute(stmt, params))
+DB(stmt, params...) = DBInterface.execute(stmt, params)
 function DB(stmt, df::DataFrame)
     DBtransaction() do
         @showprogress 0.5 for (i, row) in enumerate(Tables.rows(df))
