@@ -146,7 +146,7 @@ function upload_table(_df::DataFrame, tbl_name; drop=true, temp=false)
 
     if drop
         DB("DROP TABLE IF EXISTS $tbl_name")
-        DB("CREATE " * (temp ? "TEMPORARY" : "") * " TABLE $tbl_name (" * join(sql, ", ") * ") " * (temp ? "ENGINE=TEMP" : ""))
+        DB("CREATE " * (temp ? "TEMPORARY" : "") * " TABLE $tbl_name (" * join(sql, ", ") * ") " * (temp ? "ENGINE=MEMORY" : ""))
     end
     params = join(repeat("?", ncol(df)), ",")
     stmt = DBprepare("INSERT INTO $tbl_name VALUES ($params)")
