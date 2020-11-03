@@ -1,12 +1,12 @@
 using DataFrames, MySQL, DBInterface, ProgressMeter
 
-export DBtransaction, DBprepare, DB, DBsource, upload_table
+export DBconnect, DBtransaction, DBprepare, DB, @DB_str, DBsource, upload_table
 
 
 const DBConn = Vector{DBInterface.Connection}()
-current_db_conn() = DBConn[end]
+DBconnect() = DBConn[end]
 
-function set_db_connection(host; user=nothing, passwd=nothing)
+function DBconnect(host; user=nothing, passwd=nothing, dbname=nothing)
     DBInterface.close!.(DBConn)
     empty!(DBConn)
 
@@ -20,14 +20,17 @@ function set_db_connection(host; user=nothing, passwd=nothing)
     #                       (isnothing(user)  ?  ""  :  ";USER=" * user * (
     #                           isnothing(passwd)  ?  ""  :  ";PWD=" * passwd)))
     push!(DBConn, conn)
+
+    if !isnothing(dbname)
+        DB("USE $dbname")
+    end
     nothing
 end
 
 
-DBtransaction(f) = MySQL.transaction(f, current_db_conn())
-DBprepare(sql::AbstractString) = DBInterface.prepare(current_db_conn(), string(sql))
+DBtransaction(f) = MySQL.transaction(f, DBconnect())
+DBprepare(sql::AbstractString) = DBInterface.prepare(DBconnect(), string(sql))
 
-DB(sql::AbstractString) = DataFrame(DBInterface.execute(current_db_conn(), string(sql)))
 DB(stmt, params...) = DBInterface.execute(stmt, params)
 function DB(stmt, df::DataFrame)
     DBtransaction() do
@@ -38,6 +41,22 @@ function DB(stmt, df::DataFrame)
     nothing
 end
 
+function DB(sql::AbstractString)
+    out = DataFrame(DBInterface.execute(DBconnect(), string(sql)))
+    if  (ncol(out) == 0)  &&
+        (nrow(out) == 0)
+        return nothing
+    end
+    if  (ncol(out) == 1)  &&
+        (nrow(out) == 1)
+        return out[1,1]
+    end
+    return out
+end
+
+macro DB_str(sql)
+    return :(DB($sql))
+end
 
 function DBsource(file::AbstractString, subst::Vararg{Pair{String,String}, N}) where N
     delim = ";"
