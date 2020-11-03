@@ -1,8 +1,5 @@
 using DataFrames
 
-export gaussian, showv, askpass
-
-
 gaussian(x, mean=0., sigma=1.) =
     (1 / sqrt(2pi) / sigma) * exp(-((x - mean) / sigma)^2 / 2)
 

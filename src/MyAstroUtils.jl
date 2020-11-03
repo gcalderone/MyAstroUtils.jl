@@ -1,4 +1,4 @@
-module AstroRecipes
+module MyAstroUtils
 
 using Reexport
 @reexport using FITSIO
