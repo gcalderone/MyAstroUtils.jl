@@ -1,6 +1,6 @@
-# AstroRecipes.jl
+# MyAstroUtils
 
-A thousand recipes to "cook" astronomer's data 
+Personal collection of astronomy-related utilities
 
 =====================
 
