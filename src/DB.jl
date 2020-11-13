@@ -160,12 +160,12 @@ function prepare_columns(_df::DataFrame)
 end
 
 
-function upload_table(_df::DataFrame, tbl_name; drop=true, temp=false)
+function upload_table(_df::DataFrame, tbl_name; drop=true, temp=false, memory=false)
     (sql, df) = prepare_columns(_df)
 
     if drop
         DB("DROP TABLE IF EXISTS $tbl_name")
-        DB("CREATE " * (temp ? "TEMPORARY" : "") * " TABLE $tbl_name (" * join(sql, ", ") * ") " * (temp ? "ENGINE=MEMORY" : ""))
+        DB("CREATE " * (temp ? "TEMPORARY" : "") * " TABLE $tbl_name (" * join(sql, ", ") * ") " * (memory ? "ENGINE=MEMORY" : ""))
     end
     params = join(repeat("?", ncol(df)), ",")
     stmt = DBprepare("INSERT INTO $tbl_name VALUES ($params)")
