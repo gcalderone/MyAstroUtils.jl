@@ -1,4 +1,4 @@
-using DataFrames, FITSIO, ProgressMeter
+using DataFrames, FITSIO, ProgressMeter, Dates
 
 import DataFrames.DataFrame, Base.write
 
@@ -33,15 +33,36 @@ end
 
 
 function write(f::FITSIO.FITS, dfr::DataFrame)
+    df = deepcopy(dfr)
     data = Array{Any}(undef, 0)
-    for name in names(dfr)
-        if eltype(dfr[:, name]) == Symbol
-            push!(data, string.(dfr[:,name]))
-        elseif eltype(dfr[:, name]) == String
-            push!(data, string.(dfr[:,name]))
+    for name in names(df)
+        tt = eltype(df[:, name])
+        if isa(tt, Union)
+            tt = nonmissingtype(tt)
+            if tt == String
+                @warn "Using empty string as missing value in field $name"
+                df[ismissing.(df[:, name]), name] .= ""
+            elseif tt <: AbstractFloat
+                @warn "Using NaN as missing value in field $name"
+                df[ismissing.(df[:, name]), name] .= NaN
+            elseif tt <: Integer
+                @warn "Using zero as missing value in field $name"
+                df[ismissing.(df[:, name]), name] .= 0
+            end
+            disallowmissing!(df, name)
+        end
+        tt = eltype(df[:, name])
+        @assert !isa(tt, Union)
+
+        if tt == Symbol
+            push!(data, string.(df[:, name]))
+        elseif tt == String
+            push!(data, string.(df[:, name]))
+        elseif tt <: Dates.AbstractTime
+            push!(data, string.(df[:, name]))
         else
-            push!(data, dfr[:,name])
+            push!(data, df[:, name])
         end
     end
-    write(f, string.(names(dfr)), data)
+    write(f, string.(names(df)), data)
 end
