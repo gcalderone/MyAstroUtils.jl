@@ -1,0 +1,422 @@
+# This file is machine-generated - editing it directly is not advised
+
+[[Artifacts]]
+deps = ["Pkg"]
+git-tree-sha1 = "c30985d8821e0cd73870b17b0ed0ce6dc44cb744"
+uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
+version = "1.3.0"
+
+[[AstroLib]]
+deps = ["Dates", "DelimitedFiles", "LinearAlgebra", "Printf", "StaticArrays", "Test"]
+git-tree-sha1 = "2f5675eda6e16a5efeb60e1b387fbd7800706cd2"
+uuid = "c7932e45-9af1-51e7-9da9-f004cd3a462b"
+version = "0.4.0"
+
+[[Base64]]
+uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
+
+[[BinaryProvider]]
+deps = ["Libdl", "Logging", "SHA"]
+git-tree-sha1 = "ecdec412a9abc8db54c0efc5548c64dfce072058"
+uuid = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
+version = "0.5.10"
+
+[[CFITSIO]]
+deps = ["CFITSIO_jll"]
+git-tree-sha1 = "6365034fd46c45de7c1329a380759940f769787a"
+uuid = "3b1b4be9-1499-4b22-8d78-7db3344d1961"
+version = "1.0.0"
+
+[[CFITSIO_jll]]
+deps = ["LibCURL_jll", "Libdl", "Pkg"]
+git-tree-sha1 = "262a3a9ab0b4f03efb57f58b20cbca8b47ab6af9"
+uuid = "b3e40c51-02ae-5482-8a39-3ace5868dcf4"
+version = "3.48.0+0"
+
+[[CategoricalArrays]]
+deps = ["DataAPI", "Future", "JSON", "Missings", "Printf", "Statistics", "StructTypes", "Unicode"]
+git-tree-sha1 = "5861101791fa76fafe8dddefd70ffbfe4e33ecae"
+uuid = "324d7699-5711-5eae-9e2f-1d82baa6b597"
+version = "0.9.0"
+
+[[Compat]]
+deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "SHA", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
+git-tree-sha1 = "a706ff10f1cd8dab94f59fd09c0e657db8e77ff0"
+uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
+version = "3.23.0"
+
+[[CompilerSupportLibraries_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "8e695f735fca77e9708e795eda62afdb869cbb70"
+uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
+version = "0.3.4+0"
+
+[[ConstructionBase]]
+git-tree-sha1 = "a2a6a5fea4d6f730ec4c18a76d27ec10e8ec1c50"
+uuid = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
+version = "1.0.0"
+
+[[Crayons]]
+git-tree-sha1 = "3f71217b538d7aaee0b69ab47d9b7724ca8afa0d"
+uuid = "a8cc5b0e-0ffa-5ad4-8c14-923d3ee1735f"
+version = "4.0.4"
+
+[[DBInterface]]
+git-tree-sha1 = "7f678ccd98aef9d8462f79a6ba67bf263a67d27a"
+uuid = "a10d1c49-ce27-4219-8d33-6db1a4562965"
+version = "2.2.0"
+
+[[DataAPI]]
+git-tree-sha1 = "ad84f52c0b8f05aa20839484dbaf01690b41ff84"
+uuid = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
+version = "1.4.0"
+
+[[DataFrames]]
+deps = ["CategoricalArrays", "Compat", "DataAPI", "Future", "InvertedIndices", "IteratorInterfaceExtensions", "LinearAlgebra", "Markdown", "Missings", "PooledArrays", "PrettyTables", "Printf", "REPL", "Reexport", "SortingAlgorithms", "Statistics", "TableTraits", "Tables", "Unicode"]
+git-tree-sha1 = "3bd2f94213ea7c5cc44c84f25f364a08207d9d71"
+uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+version = "0.22.0"
+
+[[DataStructures]]
+deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
+git-tree-sha1 = "fb0aa371da91c1ff9dc7fbed6122d3e411420b9c"
+uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+version = "0.18.8"
+
+[[DataValueInterfaces]]
+git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
+uuid = "e2d170a0-9d28-54be-80f0-106bbe20a464"
+version = "1.0.0"
+
+[[Dates]]
+deps = ["Printf"]
+uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
+
+[[DecFP]]
+deps = ["DecFP_jll", "Printf", "Random", "SpecialFunctions"]
+git-tree-sha1 = "d8d6592bb3402d759862292c8af5617381f3ded9"
+uuid = "55939f99-70c6-5e9b-8bb0-5071ed7d61fd"
+version = "1.0.0"
+
+[[DecFP_jll]]
+deps = ["Libdl", "Pkg"]
+git-tree-sha1 = "ebc359a7d11bb63e3a3b87c36d07a88947640eb9"
+uuid = "47200ebd-12ce-5be5-abb7-8e082af23329"
+version = "2.0.2+0"
+
+[[DelimitedFiles]]
+deps = ["Mmap"]
+uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+
+[[Distributed]]
+deps = ["Random", "Serialization", "Sockets"]
+uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+
+[[FITSIO]]
+deps = ["CFITSIO", "Printf", "Reexport"]
+git-tree-sha1 = "2fb05253d9e665a74e8a98d081fcc324eed07757"
+uuid = "525bcba6-941b-5504-bd06-fd0dc1a4d2eb"
+version = "0.16.3"
+
+[[Formatting]]
+deps = ["Printf"]
+git-tree-sha1 = "a0c901c29c0e7c763342751c0a94211d56c0de5c"
+uuid = "59287772-0a20-5a39-b81b-1366585eb4c0"
+version = "0.4.1"
+
+[[Future]]
+deps = ["Random"]
+uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
+
+[[Healpix]]
+deps = ["FITSIO", "Printf", "RecipesBase", "Test"]
+git-tree-sha1 = "f753b15832fc0876cd80fdec7978700ba832d05d"
+uuid = "9f4e344d-96bc-545a-84a3-ae6b9e1b672b"
+version = "2.3.0"
+
+[[InteractiveUtils]]
+deps = ["Markdown"]
+uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+
+[[InvertedIndices]]
+deps = ["Test"]
+git-tree-sha1 = "15732c475062348b0165684ffe28e85ea8396afc"
+uuid = "41ab1584-1d38-5bbf-9106-f11c6c58b48f"
+version = "1.0.0"
+
+[[IteratorInterfaceExtensions]]
+git-tree-sha1 = "a3f24677c21f5bbe9d2a714f95dcd58337fb2856"
+uuid = "82899510-4779-5014-852e-03e436cf321d"
+version = "1.0.0"
+
+[[JLLWrappers]]
+git-tree-sha1 = "c70593677bbf2c3ccab4f7500d0f4dacfff7b75c"
+uuid = "692b3bcd-3c85-4b1f-b108-f13ce0eb3210"
+version = "1.1.3"
+
+[[JSON]]
+deps = ["Dates", "Mmap", "Parsers", "Unicode"]
+git-tree-sha1 = "81690084b6198a2e1da36fcfda16eeca9f9f24e4"
+uuid = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+version = "0.21.1"
+
+[[LibCURL_jll]]
+deps = ["LibSSH2_jll", "Libdl", "MbedTLS_jll", "Pkg", "Zlib_jll", "nghttp2_jll"]
+git-tree-sha1 = "897d962c20031e6012bba7b3dcb7a667170dad17"
+uuid = "deac9b47-8bc7-5906-a0fe-35ac56dc84c0"
+version = "7.70.0+2"
+
+[[LibGit2]]
+deps = ["Printf"]
+uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
+
+[[LibSSH2_jll]]
+deps = ["Libdl", "MbedTLS_jll", "Pkg"]
+git-tree-sha1 = "717705533148132e5466f2924b9a3657b16158e8"
+uuid = "29816b5a-b9ab-546f-933c-edad1886dfa8"
+version = "1.9.0+3"
+
+[[Libdl]]
+uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+
+[[Libiconv_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "8e924324b2e9275a51407a4e06deb3455b1e359f"
+uuid = "94ce4f54-9a6c-5748-9c1c-f9c7231a4531"
+version = "1.16.0+7"
+
+[[LinearAlgebra]]
+deps = ["Libdl"]
+uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+
+[[Logging]]
+uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
+
+[[MariaDB_Connector_C_jll]]
+deps = ["LibCURL_jll", "Libdl", "Libiconv_jll", "OpenSSL_jll", "Pkg", "Zlib_jll"]
+git-tree-sha1 = "94aececf2b45ded08e67648da2c8d8eb392ca050"
+uuid = "aabc7e14-95f1-5e66-9f32-aea603782360"
+version = "3.1.6+0"
+
+[[Markdown]]
+deps = ["Base64"]
+uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
+
+[[MbedTLS_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "0eef589dd1c26a3ac9d753fe1a8bcad63f956fa6"
+uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
+version = "2.16.8+1"
+
+[[Missings]]
+deps = ["DataAPI"]
+git-tree-sha1 = "ed61674a0864832495ffe0a7e889c0da76b0f4c8"
+uuid = "e1d29d7a-bbdc-5cf2-9ac0-f12de2c33e28"
+version = "0.4.4"
+
+[[Mmap]]
+uuid = "a63ad114-7e13-5084-954f-fe012c677804"
+
+[[MySQL]]
+deps = ["BinaryProvider", "DBInterface", "Dates", "DecFP", "Libdl", "MariaDB_Connector_C_jll", "Parsers", "Tables"]
+git-tree-sha1 = "c8231e628febae37bf280ec5606fa2c8d05b4917"
+uuid = "39abe10b-433b-5dbd-92d4-e302a9df00cd"
+version = "1.1.2"
+
+[[OpenSSL_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "71bbbc616a1d710879f5a1021bcba65ffba6ce58"
+uuid = "458c3c95-2e84-50aa-8efc-19380b2a3a95"
+version = "1.1.1+6"
+
+[[OpenSpecFun_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "9db77584158d0ab52307f8c04f8e7c08ca76b5b3"
+uuid = "efe28fd5-8261-553b-a9e1-b2916fc3738e"
+version = "0.5.3+4"
+
+[[OrderedCollections]]
+git-tree-sha1 = "cf59cfed2e2c12e8a2ff0a4f1e9b2cd8650da6db"
+uuid = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
+version = "1.3.2"
+
+[[Parsers]]
+deps = ["Dates"]
+git-tree-sha1 = "b417be52e8be24e916e34b3d70ec2da7bdf56a68"
+uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
+version = "1.0.12"
+
+[[Pkg]]
+deps = ["Dates", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "UUIDs"]
+uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+
+[[PooledArrays]]
+deps = ["DataAPI"]
+git-tree-sha1 = "b1333d4eced1826e15adbdf01a4ecaccca9d353c"
+uuid = "2dfb63ee-cc39-5dd5-95bd-886bf059d720"
+version = "0.5.3"
+
+[[PrettyTables]]
+deps = ["Crayons", "Formatting", "Markdown", "Reexport", "Tables"]
+git-tree-sha1 = "59046964d94dd12ae1e5c15ce460e21ba4f7ec7f"
+uuid = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
+version = "0.10.0"
+
+[[Printf]]
+deps = ["Unicode"]
+uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+
+[[ProgressMeter]]
+deps = ["Distributed", "Printf"]
+git-tree-sha1 = "4cff8da83f89e06eeae5b81307a08bb33a96a602"
+uuid = "92933f4c-e287-5a05-a399-4b506db050ca"
+version = "1.4.0"
+
+[[REPL]]
+deps = ["InteractiveUtils", "Markdown", "Sockets"]
+uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
+
+[[Random]]
+deps = ["Serialization"]
+uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+
+[[RecipesBase]]
+git-tree-sha1 = "b3fb709f3c97bfc6e948be68beeecb55a0b340ae"
+uuid = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
+version = "1.1.1"
+
+[[Reexport]]
+deps = ["Pkg"]
+git-tree-sha1 = "7b1d07f411bc8ddb7977ec7f377b97b158514fe0"
+uuid = "189a3867-3050-52da-a836-e630ba90ab69"
+version = "0.2.0"
+
+[[SHA]]
+uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+
+[[Serialization]]
+uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+
+[[SharedArrays]]
+deps = ["Distributed", "Mmap", "Random", "Serialization"]
+uuid = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
+
+[[SkyCoords]]
+deps = ["DelimitedFiles", "Printf", "StaticArrays", "Statistics", "Test"]
+git-tree-sha1 = "30d1fc4bf2dde3b90edf76c8e0f275e24290918a"
+uuid = "fc659fc5-75a3-5475-a2ea-3da92c065361"
+version = "0.3.0"
+
+[[Sockets]]
+uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
+
+[[SortMerge]]
+deps = ["Printf", "ProgressMeter", "SparseArrays", "StatsBase"]
+git-tree-sha1 = "347f0e1dff53817a007aede28d0e9eae0818d1ba"
+repo-rev = "master"
+repo-url = "https://github.com/gcalderone/SortMerge.jl.git"
+uuid = "041a2d23-8c6e-5597-be73-bf96b5e0dfd4"
+version = "1.3.1"
+
+[[SortingAlgorithms]]
+deps = ["DataStructures", "Random", "Test"]
+git-tree-sha1 = "03f5898c9959f8115e30bc7226ada7d0df554ddd"
+uuid = "a2af1166-a08f-5f64-846c-94a0d3cef48c"
+version = "0.3.1"
+
+[[SparseArrays]]
+deps = ["LinearAlgebra", "Random"]
+uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[[SpecialFunctions]]
+deps = ["OpenSpecFun_jll"]
+git-tree-sha1 = "d8d8b8a9f4119829410ecd706da4cc8594a1e020"
+uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
+version = "0.10.3"
+
+[[StaticArrays]]
+deps = ["LinearAlgebra", "Random", "Statistics"]
+git-tree-sha1 = "da4cf579416c81994afd6322365d00916c79b8ae"
+uuid = "90137ffa-7385-5640-81b9-e52037218182"
+version = "0.12.5"
+
+[[Statistics]]
+deps = ["LinearAlgebra", "SparseArrays"]
+uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+
+[[StatsBase]]
+deps = ["DataAPI", "DataStructures", "LinearAlgebra", "Missings", "Printf", "Random", "SortingAlgorithms", "SparseArrays", "Statistics"]
+git-tree-sha1 = "7bab7d4eb46b225b35179632852b595a3162cb61"
+uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+version = "0.33.2"
+
+[[StructC14N]]
+deps = ["Test"]
+git-tree-sha1 = "932b930747486efdc5f78297480c311d58374d04"
+uuid = "d2514e9c-36c4-5b8e-97e2-51e7675c221c"
+version = "0.3.0"
+
+[[StructTypes]]
+deps = ["Dates", "UUIDs"]
+git-tree-sha1 = "1ed04f622a39d2e5a6747c3a70be040c00333933"
+uuid = "856f2bd8-1eba-4b0a-8007-ebc267875bd4"
+version = "1.1.0"
+
+[[TableTraits]]
+deps = ["IteratorInterfaceExtensions"]
+git-tree-sha1 = "b1ad568ba658d8cbb3b892ed5380a6f3e781a81e"
+uuid = "3783bdb8-4a98-5b6b-af9a-565f29a5fe9c"
+version = "1.0.0"
+
+[[Tables]]
+deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "LinearAlgebra", "TableTraits", "Test"]
+git-tree-sha1 = "5131a624173d532299d1c7eb05341c18112b21b8"
+uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
+version = "1.2.1"
+
+[[Test]]
+deps = ["Distributed", "InteractiveUtils", "Logging", "Random"]
+uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[[UUIDs]]
+deps = ["Random", "SHA"]
+uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
+
+[[Unicode]]
+uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
+
+[[Unitful]]
+deps = ["ConstructionBase", "LinearAlgebra", "Random"]
+git-tree-sha1 = "2b643523d52fc9fb4fe0729e6561d066055d58d8"
+uuid = "1986cc42-f94f-5a68-af5c-568840ba703d"
+version = "1.5.0"
+
+[[UnitfulAngles]]
+deps = ["Dates", "Unitful"]
+git-tree-sha1 = "dd21b5420bf6e9b76a8c6e56fb575319e7b1f895"
+uuid = "6fb2a4bd-7999-5318-a3b2-8ad61056cd98"
+version = "0.6.1"
+
+[[UnitfulAstro]]
+deps = ["Unitful", "UnitfulAngles"]
+git-tree-sha1 = "b154be4ca9610e9c9dbb9dba98b2bd750539630b"
+uuid = "6112ee07-acf9-5e0f-b108-d242c714bf9f"
+version = "1.0.1"
+
+[[WCS]]
+deps = ["BinaryProvider", "Libdl", "Test"]
+git-tree-sha1 = "6563aaf80239619ecf5ddd4be734297ba3675796"
+uuid = "15f3aee2-9e10-537f-b834-a6fb8bdb944d"
+version = "0.5.0"
+
+[[Zlib_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "320228915c8debb12cb434c59057290f0834dbf6"
+uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
+version = "1.2.11+18"
+
+[[nghttp2_jll]]
+deps = ["Libdl", "Pkg"]
+git-tree-sha1 = "8e2c44ab4d49ad9518f359ed8b62f83ba8beede4"
+uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
+version = "1.40.0+2"

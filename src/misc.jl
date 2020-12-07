@@ -77,7 +77,7 @@ end
 
 function strip_blanks!(df::DataFrame)
     for i in 1:ncol(df)
-        if nonmissingtype(eltypes(df)[i]) == String
+        if nonmissingtype(eltype(df[:, i])) == String
             df[:, i] .= string.(strip.(df[:, i]))
         end
     end

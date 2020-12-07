@@ -21,23 +21,81 @@ function pixelized_area(RAd, DECd)
 end
 
 
+function xmatch_best(ra1::Vector{T1}, de1::Vector{T1},
+                     ra2::Vector{T2}, de2::Vector{T2},
+                     jj::SortMerge.Matched) where
+    {T1 <: AbstractFloat, T2 <: AbstractFloat}
+    out = Vector{Vector{Bool}}()
+
+    for side in 1:2
+        isort = sortperm(jj[side])
+        jj1 = jj[1][isort]
+        jj2 = jj[2][isort]
+        dist = gcirc.(2, ra1[jj1], de1[jj1], ra2[jj2], de2[jj2])
+        best = fill(true, length(dist))
+
+        k1 = 1
+        while k1 < length(dist)
+            k2 = k1
+            ii = (side == 1  ?  jj1  :  jj2)
+            while ii[k1] == ii[k2]
+                k2 += 1
+                (k2 > length(dist))  &&  break
+            end
+            k2 -= 1
+            if k2 > k1
+                best[k1:k2] .= false
+                kk = k1 - 1 + argmin(dist[k1:k2])
+                best[kk] = true
+            end
+            k1 = k2 + 1
+        end
+        isort = sortperm(isort)
+        best = best[isort]
+        push!(out, best)
+    end
+    return out[1], out[2]
+end
+
+
 function xmatch(ra1::Vector{T1}, de1::Vector{T1},
                 ra2::Vector{T2}, de2::Vector{T2},
-                thresh_asec::T3; sorted=false, quiet=false) where
-    {T1 <: AbstractFloat, T2 <: AbstractFloat, T3 <: AbstractFloat}
+                thresh_arcsec::Real; sorted=false, quiet=false, best=nothing) where
+    {T1 <: AbstractFloat, T2 <: AbstractFloat}
+
     lt(v, i, j) = ((v[i, 2] - v[j, 2]) < 0)
-    function sd(c1, c2, i1, i2, thresh_asec)
-        thresh_deg = thresh_asec / 3600. # [deg]
+    function sd(c1, c2, i1, i2, thresh_arcsec)
+        thresh_deg = thresh_arcsec / 3600. # [deg]
         dd = c1[i1, 2] - c2[i2, 2]
         (dd < -thresh_deg)  &&  (return -1)
         (dd >  thresh_deg)  &&  (return  1)
         dd = gcirc(2, c1[i1, 1], c1[i1, 2], c2[i2, 1], c2[i2, 2])
-        (dd <= thresh_asec)  &&  (return 0)
+        (dd <= thresh_arcsec)  &&  (return 0)
         return 999
     end
     @assert all(isfinite.(ra1))
     @assert all(isfinite.(de1))
     @assert all(isfinite.(ra2))
     @assert all(isfinite.(de2))
-    return sortmerge([ra1 de1], [ra2 de2], thresh_asec, lt1=lt, lt2=lt, sd=sd, sorted=sorted, quiet=quiet)
+
+    out = sortmerge([ra1 de1], [ra2 de2], thresh_arcsec,
+                    lt1=lt, lt2=lt, sd=sd, sorted=sorted, quiet=quiet)
+
+    if !isnothing(best)  &&
+        ((maximum(countmatch(out, 1)) > 1)  ||
+         (maximum(countmatch(out, 2)) > 1))
+        (best1, best2) = xmatch_best(ra1, de1, ra2, de2, out)
+        if best == 1
+            selected = findall(best1)
+        elseif best == 2
+            selected = findall(best2)
+        elseif best == :both
+            selected = findall(best1 .& best2)
+        else
+            error("Unrecognized value for best keyword: $best")
+        end
+        quiet  ||  println("Dropping $(nmatch(out) - length(selected)) matching pairs")
+        out = SortMerge.subset(out, selected)
+    end
+    return out
 end
