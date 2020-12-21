@@ -133,16 +133,22 @@ function prepare_columns(_df::DataFrame)
             hasnull  ||   allowmissing!(df, i)
             df[(.!ismissing.(df[:, i]))  .&  (.!isfinite.(df[:, i])), i] .= missing
             push!(dbtype, "DOUBLE")
+        elseif t == UInt8
+            push!(dbtype, "TINYINT UNSIGNED $notnull")
         elseif t == Int8
             push!(dbtype, "TINYINT SIGNED $notnull")
+        elseif t == UInt16
+            push!(dbtype, "SMALLINT UNSIGNED $notnull")
         elseif t == Int16
             push!(dbtype, "SMALLINT SIGNED $notnull")
+        elseif t == UInt32
+            push!(dbtype, "INT UNSIGNED $notnull")
         elseif t == Int32
             push!(dbtype, "INT SIGNED $notnull")
         elseif t == Int64
             push!(dbtype, "BIGINT SIGNED $notnull")
         elseif t == Bool
-            # MySQL.jl package does not yet support INSERT preparaed statements with BOOLEAN data type
+            # MySQL.jl package does not yet support INSERT prepared statements with BOOLEAN data type
             push!(dbtype, "TINYINT SIGNED $notnull")
             df[!, i] .= Int8.(df[!, i])
         elseif t == Symbol
