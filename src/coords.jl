@@ -60,7 +60,7 @@ end
 
 function xmatch(ra1::Vector{T1}, de1::Vector{T1},
                 ra2::Vector{T2}, de2::Vector{T2},
-                thresh_arcsec::Real; sorted=false, quiet=false, best=nothing) where
+                thresh_arcsec::Real; sorted=false, quiet=false, best=nothing, invert=false) where
     {T1 <: AbstractFloat, T2 <: AbstractFloat}
 
     lt(v, i, j) = ((v[i, 2] - v[j, 2]) < 0)
@@ -86,16 +86,17 @@ function xmatch(ra1::Vector{T1}, de1::Vector{T1},
          (maximum(countmatch(out, 2)) > 1))
         (best1, best2) = xmatch_best(ra1, de1, ra2, de2, out)
         if best == 1
-            selected = findall(best1)
+            selected = findall(xor.(best1, invert))
         elseif best == 2
-            selected = findall(best2)
+            selected = findall(xor.(best2, invert))
         elseif best == :both
-            selected = findall(best1 .& best2)
+            selected = findall(xor.(best1 .& best2, invert))
         else
             error("Unrecognized value for best keyword: $best")
         end
         quiet  ||  println("Dropping $(nmatch(out) - length(selected)) matching pairs")
         out = SortMerge.subset(out, selected)
     end
+
     return out
 end
