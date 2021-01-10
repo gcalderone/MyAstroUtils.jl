@@ -1,6 +1,6 @@
 using AstroLib, SkyCoords, SortMerge, Healpix, Printf
 
-export ra2string, dec2string, pixelized_area, xmatch
+export ra2string, dec2string, pixelized_area, pixel_id, pixel_area, pixel_total, xmatch
 
 ra2string(d::Float64)  = @sprintf(" %02d:%02d:%05.2f", sixty(d/15.)...)
 dec2string(d::Float64) = (d < 0  ?  "-"  :  "+") * @sprintf("%02d:%02d:%05.2f", sixty(abs(d))...)
@@ -18,6 +18,17 @@ function pixelized_area(RAd, DECd)
         last = area
         @printf("%6d  %12d  %12.4f  %12.4f\n", order, n, area, pdiff)
     end
+end
+
+pixel_total(order) = nside2npix(2^order)
+
+pixel_area(order) = nside2pixarea(2^order) * ((180/pi)^2)
+
+function pixel_id(order, RAd, DECd)
+    @assert 0 < order < 13
+    nside = 2^order
+    rad = 180/pi
+    ang2pixNest(Healpix.Resolution(nside), (90 .- DECd) ./ rad, RAd ./ rad)
 end
 
 
