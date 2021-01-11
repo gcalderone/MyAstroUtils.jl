@@ -133,8 +133,12 @@ function xmatch(ra1::Vector{T1}, de1::Vector{T1}, thresh_arcsec1::Vector{<:Real}
     @assert all(isfinite.(ra2))
     @assert all(isfinite.(de2))
 
-    max_thresh = max(maximum(thresh_arcsec1), maximum(thresh_arcsec2))
-
+    max_thresh = 0.
+    try
+        # Ignore errors when one or both arrays are empty
+        max_thresh = max(maximum(thresh_arcsec1), maximum(thresh_arcsec2))
+    catch
+    end
     # If there's only a single threshold value use the simpler (and
     # faster) algorithm
     if  all(max_thresh .== thresh_arcsec1)  &&
