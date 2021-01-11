@@ -1,6 +1,6 @@
 using AstroLib, SkyCoords, SortMerge, Healpix, Printf
 
-export ra2string, dec2string, pixelized_area, pixel_id, pixel_area, pixel_total, xmatch
+export ra2string, dec2string, pixelized_area, pixel_id, pixel_area, pixel_total, xmatch, best_match
 
 ra2string(d::Float64)  = @sprintf(" %02d:%02d:%05.2f", sixty(d/15.)...)
 dec2string(d::Float64) = (d < 0  ?  "-"  :  "+") * @sprintf("%02d:%02d:%05.2f", sixty(abs(d))...)
@@ -32,12 +32,18 @@ function pixel_id(order, RAd, DECd)
 end
 
 
-function xmatch_best(ra1::Vector{T1}, de1::Vector{T1},
-                     ra2::Vector{T2}, de2::Vector{T2},
-                     jj::SortMerge.Matched) where
+function best_match(ra1::Vector{T1}, de1::Vector{T1},
+                    ra2::Vector{T2}, de2::Vector{T2},
+                    jj::SortMerge.Matched;
+                    side=:both, invert=false) where
     {T1 <: AbstractFloat, T2 <: AbstractFloat}
-    out = Vector{Vector{Bool}}()
 
+    if  (maximum(countmatch(jj, 1)) == 1)  &&
+        (maximum(countmatch(jj, 2)) == 1)
+        return jj  # nothing to do
+    end
+
+    out = Vector{Vector{Bool}}()
     for side in 1:2
         isort = sortperm(jj[side])
         jj1 = jj[1][isort]
@@ -65,13 +71,25 @@ function xmatch_best(ra1::Vector{T1}, de1::Vector{T1},
         best = best[isort]
         push!(out, best)
     end
-    return out[1], out[2]
+
+    best1 = out[1]
+    best2 = out[2]
+    if side == 1
+        selected = findall(xor.(best1, invert))
+    elseif side == 2
+        selected = findall(xor.(best2, invert))
+    elseif side == :both
+        selected = findall(xor.(best1 .& best2, invert))
+    else
+        error("Unrecognized value for best keyword: $best")
+    end
+    return SortMerge.subset(jj, selected)
 end
 
 
 function xmatch(ra1::Vector{T1}, de1::Vector{T1},
                 ra2::Vector{T2}, de2::Vector{T2},
-                thresh_arcsec::Real; sorted=false, quiet=false, best=nothing, invert=false) where
+                thresh_arcsec::Real; sorted=false) where
     {T1 <: AbstractFloat, T2 <: AbstractFloat}
 
     lt(v, i, j) = ((v[i, 2] - v[j, 2]) < 0)
@@ -88,26 +106,45 @@ function xmatch(ra1::Vector{T1}, de1::Vector{T1},
     @assert all(isfinite.(de1))
     @assert all(isfinite.(ra2))
     @assert all(isfinite.(de2))
-
     out = sortmerge([ra1 de1], [ra2 de2], thresh_arcsec,
-                    lt1=lt, lt2=lt, sd=sd, sorted=sorted, quiet=quiet)
+                    lt1=lt, lt2=lt,
+                    sd=sd, sorted=sorted)
+    return out
+end
 
-    if !isnothing(best)  &&
-        ((maximum(countmatch(out, 1)) > 1)  ||
-         (maximum(countmatch(out, 2)) > 1))
-        (best1, best2) = xmatch_best(ra1, de1, ra2, de2, out)
-        if best == 1
-            selected = findall(xor.(best1, invert))
-        elseif best == 2
-            selected = findall(xor.(best2, invert))
-        elseif best == :both
-            selected = findall(xor.(best1 .& best2, invert))
-        else
-            error("Unrecognized value for best keyword: $best")
-        end
-        quiet  ||  println("Dropping $(nmatch(out) - length(selected)) matching pairs")
-        out = SortMerge.subset(out, selected)
+
+function xmatch(ra1::Vector{T1}, de1::Vector{T1}, thresh_arcsec1::Vector{<:Real},
+                ra2::Vector{T2}, de2::Vector{T2}, thresh_arcsec2::Vector{<:Real};
+                sorted=false) where
+    {T1 <: AbstractFloat, T2 <: AbstractFloat}
+
+    lt(v, i, j) = ((v[i, 2] - v[j, 2]) < 0)
+    function sd(c1, c2, i1, i2, thresh_arcsec1, thresh_arcsec2, thresh_deg)
+        dd = c1[i1, 2] - c2[i2, 2]
+        (dd < -thresh_deg)  &&  (return -1)
+        (dd >  thresh_deg)  &&  (return  1)
+        dd = gcirc(2, c1[i1, 1], c1[i1, 2], c2[i2, 1], c2[i2, 2])
+        thresh_arcsec = max(thresh_arcsec1[i1], thresh_arcsec2[i2])
+        (dd <= thresh_arcsec)  &&  (return 0)
+        return 999
+    end
+    @assert all(isfinite.(ra1))
+    @assert all(isfinite.(de1))
+    @assert all(isfinite.(ra2))
+    @assert all(isfinite.(de2))
+
+    max_thresh = max(maximum(thresh_arcsec1), maximum(thresh_arcsec2))
+
+    # If there's only a single threshold value use the simpler (and
+    # faster) algorithm
+    if  all(max_thresh .== thresh_arcsec1)  &&
+        all(max_thresh .== thresh_arcsec2)
+        return xmatch(ra1, de1, ra2, de2, max_thresh)
     end
 
+    max_thresh_deg = max_thresh / 3600.
+    out = sortmerge([ra1 de1], [ra2 de2], thresh_arcsec1, thresh_arcsec2, max_thresh_deg,
+                    lt1=lt, lt2=lt,
+                    sd=sd, sorted=sorted)
     return out
 end
