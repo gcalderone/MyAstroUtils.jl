@@ -33,8 +33,14 @@ DBprepare(sql::AbstractString) = DBInterface.prepare(DBconnect(), string(sql))
 
 DB(stmt, params...) = DBInterface.execute(stmt, params)
 function DB(stmt, df::DataFrame)
+    desc = "DB "
+    barlen = ProgressMeter.tty_width(desc, stderr)
+    (barlen > 50)  &&  (barlen = 50)
+    prog = Progress(size1, desc=desc, dt=0.5, color=:light_black, barlen=barlen,
+                    barglyphs=BarGlyphs('|','█', ['▏','▎','▍','▌','▋','▊','▉'],' ','|',))
     DBtransaction() do
-        @showprogress 0.5 for (i, row) in enumerate(Tables.rows(df))
+        for (i, row) in enumerate(Tables.rows(df))
+            update!(prog, i)
             DBInterface.execute(stmt, Tables.Row(row))
         end
     end
