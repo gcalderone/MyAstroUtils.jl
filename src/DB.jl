@@ -33,7 +33,7 @@ DBprepare(sql::AbstractString) = DBInterface.prepare(DBconnect(), string(sql))
 
 DB(stmt, params...) = DBInterface.execute(stmt, params)
 function DB(stmt, df::DataFrame)
-    desc = "DB "
+    desc = "DB p.stmt "
     barlen = ProgressMeter.tty_width(desc, stderr)
     (barlen > 50)  &&  (barlen = 50)
     prog = Progress(size1, desc=desc, dt=0.5, color=:light_black, barlen=barlen,
