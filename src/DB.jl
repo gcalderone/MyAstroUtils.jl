@@ -36,7 +36,7 @@ function DB(stmt, df::DataFrame)
     desc = "DB p.stmt "
     barlen = ProgressMeter.tty_width(desc, stderr)
     (barlen > 50)  &&  (barlen = 50)
-    prog = Progress(size1, desc=desc, dt=0.5, color=:light_black, barlen=barlen,
+    prog = Progress(nrow(df), desc=desc, dt=0.5, color=:light_black, barlen=barlen,
                     barglyphs=BarGlyphs('|','█', ['▏','▎','▍','▌','▋','▊','▉'],' ','|',))
     DBtransaction() do
         for (i, row) in enumerate(Tables.rows(df))
