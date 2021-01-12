@@ -323,9 +323,9 @@ uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
 
 [[SortMerge]]
 deps = ["Printf", "ProgressMeter", "SparseArrays", "StatsBase"]
-git-tree-sha1 = "4125fe224f06d2863c8b27d7c8a1aa7fd8695f71"
+git-tree-sha1 = "97f83f3848f984baf4ce2535d6733056085505bc"
 uuid = "041a2d23-8c6e-5597-be73-bf96b5e0dfd4"
-version = "1.3.2"
+version = "1.3.3"
 
 [[SortingAlgorithms]]
 deps = ["DataStructures", "Random", "Test"]
