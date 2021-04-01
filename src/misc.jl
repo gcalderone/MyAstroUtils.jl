@@ -1,4 +1,4 @@
-using DataFrames, Unitful, UnitfulAstro
+using DataFrames, Unitful, UnitfulAstro, Statistics
 
 export compare_df, strip_blanks!, gpc
 
