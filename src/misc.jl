@@ -144,3 +144,17 @@ function smooth(y, n)
     end
     return out
 end
+
+
+function ppvalunc(v, e)
+    f = 10^ceil(-log10(e))
+    pe = round(e * f) / f
+    if isinteger(log10(pe))  &&  pe <= e
+        # if the only sig. digit is 1
+        f *= 10
+        pe = round(e * f) / f
+    end
+    pv = round(v * f) / f
+    # println(v, " ", e, " ", f, " ", pv, " ", pe)
+    return pv, pe
+end
