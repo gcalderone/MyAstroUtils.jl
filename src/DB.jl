@@ -39,7 +39,7 @@ DB(stmt, params...) = DBInterface.execute(stmt, params)
 function DB(stmt, df::DataFrame)
     desc = split(stmt.sql)[1] * join(fill(" ", 9))
     desc = desc[1:9] * " "
-    barlen = ProgressMeter.tty_width(desc, stderr)
+    barlen = ProgressMeter.tty_width(desc, stderr, false)
     (barlen > 50)  &&  (barlen = 50)
     prog = Progress(nrow(df), desc=desc, dt=0.5, color=:light_black, barlen=barlen,
                     barglyphs=BarGlyphs('|','█', ['▏','▎','▍','▌','▋','▊','▉'],' ','|',))
