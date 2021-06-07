@@ -1,6 +1,6 @@
 using DataFrames, MySQL, DBInterface, ProgressMeter
 
-export DBconnect, DBtransaction, DBprepare, DB, @DB_str, DBsource, upload_table
+export DBconnect, DBclose, DBtransaction, DBprepare, DB, @DB_str, DBsource, upload_table
 
 
 const DBConn = Vector{DBInterface.Connection}()
