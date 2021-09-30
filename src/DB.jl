@@ -1,24 +1,28 @@
 using DataFrames, MySQL, DBInterface, ProgressMeter
 
-export DBconnect, DBtransaction, DBprepare, DB, @DB_str, DBsource, upload_table
+export DBconnect, DBclose, DBtransaction, DBprepare, DB, @DB_str, DBsource, upload_table
 
 
 const DBConn = Vector{DBInterface.Connection}()
 DBconnect() = DBConn[end]
 
-function DBconnect(host; user=nothing, passwd=nothing, dbname=nothing)
+function DBclose()
     DBInterface.close!.(DBConn)
     empty!(DBConn)
+end
 
-    if !isnothing(user)  &&  isnothing(passwd)
-        passwd = askpass("Enter password for DB user $user")
+function DBconnect(host; user=nothing, pass=nothing, dbname=nothing)
+    DBclose()
+
+    if !isnothing(user)  &&  isnothing(pass)
+        pass = askpass("Enter password for DB user $user")
     end
-    conn = DBInterface.connect(MySQL.Connection, host, user, passwd)
+    conn = DBInterface.connect(MySQL.Connection, host, user, pass)
 
     # "Driver={MariaDB};SERVER=127.0.0.1"
     #conn = ODBC.Connection(host *
     #                       (isnothing(user)  ?  ""  :  ";USER=" * user * (
-    #                           isnothing(passwd)  ?  ""  :  ";PWD=" * passwd)))
+    #                           isnothing(pass)  ?  ""  :  ";PWD=" * pass)))
     push!(DBConn, conn)
 
     if !isnothing(dbname)
@@ -187,4 +191,3 @@ function upload_table(_df::DataFrame, tbl_name; drop=true, temp=false, memory=fa
     stmt = DBprepare("INSERT INTO $tbl_name VALUES ($params)")
     DB(stmt, df)
 end
-
