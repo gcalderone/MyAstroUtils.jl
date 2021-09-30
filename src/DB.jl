@@ -160,9 +160,12 @@ function prepare_columns(_df::DataFrame)
             df[!, i] .= Int8.(df[!, i])
         elseif t == Symbol
             df[!, i] .= string(df[:, i])
+            @assert count(.!ismissing.(df[:, i])) > 0 "All values are missing on column $(names(df)[i])"
             push!(dbtype, "ENUM(" * join("'" .* sort(unique(string.(df[:, i]))) .* "'", ", ") * ") $notnull")
         elseif t == String
-            push!(dbtype, "VARCHAR(" * string(maximum(length.(df[:, i]))) * ") $notnull")
+            tmp = collect(skipmissing(df[:, i]))
+            @assert count(.!ismissing.(tmp)) > 0 "All values are missing on column $(names(df)[i])"
+            push!(dbtype, "VARCHAR(" * string(maximum(length.(tmp))) * ") $notnull")
         else
             error("Type not supported: $t")
         end
