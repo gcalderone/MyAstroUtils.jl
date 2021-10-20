@@ -176,8 +176,12 @@ DBColumn(data::Vector{Symbol}) =
 
 function DBColumn(data::Vector{Union{Missing, String}})
     i = findall(.!ismissing.(data))
-    @assert length(i) > 0 "All values are missing"
-    maxlen = maximum(length.(data[i]))
+    if length(i) == 0
+        @warning "All values are missing, assuming a length of 20"
+        maxlen = 20
+    else
+        maxlen = maximum(length.(data[i]))
+    end
     return DBColumn(data, "VARCHAR($(maxlen))")
 end
 
