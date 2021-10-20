@@ -177,7 +177,7 @@ DBColumn(data::Vector{Symbol}) =
 function DBColumn(data::Vector{Union{Missing, String}})
     i = findall(.!ismissing.(data))
     if length(i) == 0
-        @warning "All values are missing, assuming a length of 20"
+        @warn "All values are missing, assuming a length of 20"
         maxlen = 20
     else
         maxlen = maximum(length.(data[i]))
