@@ -1,6 +1,6 @@
-using DataFrames, MySQL, DBInterface, ProgressMeter
+using DataFrames, MySQL, DBInterface, ProgressMeter, DataStructures
 
-export DBconnect, DBclose, DBtransaction, DBprepare, DB, @DB_str, DBsource, upload_table
+export DBconnect, DBclose, DBtransaction, DBprepare, DB, @DB_str, DBsource, upload_table!
 
 
 const DBConn = Vector{DBInterface.Connection}()
@@ -45,7 +45,7 @@ function DB(stmt, df::DataFrame)
                     barglyphs=BarGlyphs('|','█', ['▏','▎','▍','▌','▋','▊','▉'],' ','|',))
     DBtransaction() do
         for (i, row) in enumerate(Tables.rows(df))
-            update!(prog, i)
+            ProgressMeter.update!(prog, i)
             DBInterface.execute(stmt, Tables.Row(row))
         end
     end
@@ -108,86 +108,146 @@ function DBsource(file::AbstractString, subst::Vararg{Pair{String,String}, N}) w
 end
 
 
-function prepare_columns(_df::DataFrame)
-    df = deepcopy(_df)
-    colnames = Vector{Symbol}()
-    for name in names(df)
-        if isa(df[1, name], AbstractVector)
-            for i in 1:length(df[1, name])
-                df[!, Symbol(name, i)] .= getindex.(df[:, name], i)
-                push!(colnames, Symbol(name, i))
-            end
-        else
-            push!(colnames, Symbol(name))
-        end
-    end
-    select!(df, colnames)
 
-    dbtype = Vector{String}()
-    for i in 1:ncol(df)
-        tn = eltype(df[[], i])
-        if isa(tn, Union)
-            t = nonmissingtype(tn)
-            @assert isa(t, DataType) "Type not supported: $tn"
-            hasnull = true
-        else
-            t = tn
-            hasnull = false
-        end
+mutable struct DBColumn{T}
+    sql::String
+    null::Bool
+    length::Int
 
-        notnull = (hasnull  ?  ""  :  "NOT NULL")
-        if t == Float32
-            hasnull  ||   allowmissing!(df, i)
-            df[(.!ismissing.(df[:, i]))  .&  (.!isfinite.(df[:, i])), i] .= missing
-            push!(dbtype, "FLOAT")
-        elseif t == Float64
-            hasnull  ||   allowmissing!(df, i)
-            df[(.!ismissing.(df[:, i]))  .&  (.!isfinite.(df[:, i])), i] .= missing
-            push!(dbtype, "DOUBLE")
-        elseif t == UInt8
-            push!(dbtype, "TINYINT UNSIGNED $notnull")
-        elseif t == Int8
-            push!(dbtype, "TINYINT SIGNED $notnull")
-        elseif t == UInt16
-            push!(dbtype, "SMALLINT UNSIGNED $notnull")
-        elseif t == Int16
-            push!(dbtype, "SMALLINT SIGNED $notnull")
-        elseif t == UInt32
-            push!(dbtype, "INT UNSIGNED $notnull")
-        elseif t == Int32
-            push!(dbtype, "INT SIGNED $notnull")
-        elseif t == Int64
-            push!(dbtype, "BIGINT SIGNED $notnull")
-        elseif t == Bool
-            # MySQL.jl package does not yet support INSERT prepared statements with BOOLEAN data type
-            push!(dbtype, "TINYINT SIGNED $notnull")
-            df[!, i] .= Int8.(df[!, i])
-        elseif t == Symbol
-            df[!, i] .= string(df[:, i])
-            @assert count(.!ismissing.(df[:, i])) > 0 "All values are missing on column $(names(df)[i])"
-            push!(dbtype, "ENUM(" * join("'" .* sort(unique(string.(df[:, i]))) .* "'", ", ") * ") $notnull")
-        elseif t == String
-            tmp = collect(skipmissing(df[:, i]))
-            @assert count(.!ismissing.(tmp)) > 0 "All values are missing on column $(names(df)[i])"
-            push!(dbtype, "VARCHAR(" * string(maximum(length.(tmp))) * ") $notnull")
-        else
-            error("Type not supported: $t")
-        end
+    function DBColumn(data::AbstractVector{T}, sql) where T
+        new{T}(sql, false, 0)
     end
 
-    sql = "`" .* string.(names(df)) .* "` " .* dbtype
-    return (sql, df)
+    function DBColumn(data::AbstractVector{Union{Missing, T}}, sql) where T
+        @assert !isa(T, Union)
+        new{T}(sql, true, 0)
+    end
+
+    function DBColumn(data::AbstractVector{Vector{T}}, sql) where T
+        @assert !isa(T, Union)
+        new{T}(sql, false, length(data[1]))
+    end
+end
+
+DBColumn(data::Vector{Union{Missing, Float32}}) = DBColumn(data, "FLOAT")
+function DBColumn(data::Vector{Float32})
+    if count(isnan.(data)) > 0
+        data = convert(Vector{Union{Missing, Float32}}, data)
+    end
+    return DBColumn(data, "FLOAT")
+end
+
+DBColumn(data::Vector{Union{Missing, Float64}}) = DBColumn(data, "DOUBLE")
+function DBColumn(data::Vector{Float64})
+    if count(isnan.(data)) > 0
+        data = convert(Vector{Union{Missing, Float64}}, data)
+    end
+    return DBColumn(data, "DOUBLE")
+end
+
+DBColumn(data::Vector{Union{Missing, UInt8 }}) = DBColumn(data, "TINYINT  UNSIGNED")
+DBColumn(data::Vector{               UInt8  }) = DBColumn(data, "TINYINT  UNSIGNED")
+DBColumn(data::Vector{Union{Missing,  Int8 }}) = DBColumn(data, "TINYINT    SIGNED")
+DBColumn(data::Vector{                Int8  }) = DBColumn(data, "TINYINT    SIGNED")
+DBColumn(data::Vector{Union{Missing, UInt16}}) = DBColumn(data, "SMALLINT UNSIGNED")
+DBColumn(data::Vector{               UInt16 }) = DBColumn(data, "SMALLINT UNSIGNED")
+DBColumn(data::Vector{Union{Missing,  Int16}}) = DBColumn(data, "SMALLINT   SIGNED")
+DBColumn(data::Vector{                Int16 }) = DBColumn(data, "SMALLINT   SIGNED")
+DBColumn(data::Vector{Union{Missing, UInt32}}) = DBColumn(data, "     INT UNSIGNED")
+DBColumn(data::Vector{               UInt32 }) = DBColumn(data, "     INT UNSIGNED")
+DBColumn(data::Vector{Union{Missing,  Int32}}) = DBColumn(data, "     INT   SIGNED")
+DBColumn(data::Vector{                Int32 }) = DBColumn(data, "     INT   SIGNED")
+DBColumn(data::Vector{Union{Missing, UInt64}}) = DBColumn(data, "  BIGINT UNSIGNED")
+DBColumn(data::Vector{               UInt64 }) = DBColumn(data, "  BIGINT UNSIGNED")
+DBColumn(data::Vector{Union{Missing,  Int64}}) = DBColumn(data, "  BIGINT   SIGNED")
+DBColumn(data::Vector{                Int64 }) = DBColumn(data, "  BIGINT   SIGNED")
+DBColumn(data::Vector{Union{Missing,   Bool}}) = DBColumn(data, "TINYINT    SIGNED")
+DBColumn(data::Vector{                 Bool }) = DBColumn(data, "TINYINT    SIGNED")
+
+function DBColumn(data::Vector{Union{Missing, Symbol}})
+    i = findall(.!ismissing.(data))
+    @assert length(i) > 0 "All values are missing"
+    return DBColumn(data, "ENUM(" * join("'" .* sort(unique(string.(data[i]))) .* "'", ", ") * ")")
+end
+
+DBColumn(data::Vector{Symbol}) =
+    return DBColumn(data, "ENUM(" * join("'" .* sort(unique(string.(data))) .* "'", ", ") * ")")
+
+
+function DBColumn(data::Vector{Union{Missing, String}})
+    i = findall(.!ismissing.(data))
+    @assert length(i) > 0 "All values are missing"
+    maxlen = maximum(length.(data[i]))
+    return DBColumn(data, "VARCHAR($(maxlen))")
+end
+
+function DBColumn(data::Vector{String})
+    maxlen = maximum(length.(data))
+    return DBColumn(data, "VARCHAR($(maxlen))")
 end
 
 
-function upload_table(_df::DataFrame, tbl_name; drop=true, temp=false, memory=false)
-    (sql, df) = prepare_columns(_df)
+prepare_column!(data::DataFrame, col::DBColumn, name::Symbol) =
+    col.null  &&  allowmissing!(data, name)
+
+
+function prepare_column!(data::DataFrame, col::Union{DBColumn{Float32}, DBColumn{Float64}}, name::Symbol)
+    i = findall(.!ismissing.(data[:, name])  .&  isnan.(data[:, name]))
+    @assert (length(i) == 0)  ||  col.null
+    if col.null
+        allowmissing!(data, name)
+        data[i, name] .= missing
+    end
+end
+
+function prepare_column!(data::DataFrame, col::DBColumn{Bool}, name::Symbol)
+    data[!, name] = fill(Int8(0), nrow(data))
+    col.null  &&  allowmissing!(data, name)
+    i = findall(  ismissing.(data[:, name]));  data[i, name] .= missing
+    i = findall(.!ismissing.(data[:, name]));  data[i, name] .= Int8(data[:, name])
+end
+
+
+
+function DBColumns(data::DataFrame)
+    out = OrderedDict{Symbol, DBColumn}()
+    for name in Symbol.(names(data))
+        out[name] = DBColumn(data[:, name])
+    end
+    return out
+end
+
+upload_table!(data::DataFrame, tbl_name::String; kw...) =
+    upload_table!(data, DBColumns(data), tbl_name; kw...)
+
+function upload_table!(data::DataFrame, meta::OrderedDict{Symbol, DBColumn}, tbl_name::String; drop=true, temp=false, memory=false)
+    coldefs = Vector{String}()
+    for name in Symbol.(names(data))
+        @info "Preparing column $name"
+        col = meta[name]
+        if col.length == 0
+            prepare_column!(data, col, name)
+            push!(coldefs, "`$(name)` $(col.sql) " * (col.null  ?  ""  :  " NOT NULL"))
+        else
+            for i in 1:col.length
+                data[!, Symbol(name, i)] .= getindex.(data[:, name], i)
+                prepare_column!(data, col, Symbol(name, i))
+                push!(coldefs, "`$(name)$(i)` $(col.sql) " * (col.null  ?  ""  :  " NOT NULL"))
+            end
+            select!(data, Not(name))
+        end
+    end
 
     if drop
         DB("DROP TABLE IF EXISTS $tbl_name")
-        DB("CREATE " * (temp ? "TEMPORARY" : "") * " TABLE $tbl_name (" * join(sql, ", ") * ") " * (memory ? "ENGINE=MEMORY" : ""))
+        sql = "CREATE " * (temp ? "TEMPORARY" : "") * " TABLE $tbl_name"
+        sql *= " ( " * join(coldefs, ", ") * ")"
+        memory  &&  (sql *= " ENGINE=MEMORY")
+        println(sql)
+        DB(sql)
     end
-    params = join(repeat("?", ncol(df)), ",")
+    params = join(repeat("?", ncol(data)), ",")
     stmt = DBprepare("INSERT INTO $tbl_name VALUES ($params)")
-    DB(stmt, df)
+    DB(stmt, data)
+    nothing
 end
