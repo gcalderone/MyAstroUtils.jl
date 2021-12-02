@@ -207,8 +207,12 @@ end
 function prepare_column!(data::DataFrame, col::DBColumn{Bool}, name::Symbol)
     data[!, name] = fill(Int8(0), nrow(data))
     col.null  &&  allowmissing!(data, name)
-    i = findall(  ismissing.(data[:, name]));  data[i, name] .= missing
-    i = findall(.!ismissing.(data[:, name]));  data[i, name] .= Int8(data[:, name])
+    if col.null
+        i = findall(  ismissing.(data[:, name]));
+        data[i, name] .= missing
+    end
+    i = findall(.!ismissing.(data[:, name]))
+    data[i, name] .= Int8.(data[i, name])
 end
 
 
