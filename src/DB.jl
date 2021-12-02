@@ -224,7 +224,8 @@ end
 upload_table!(data::DataFrame, tbl_name::String; kw...) =
     upload_table!(data, DBColumns(data), tbl_name; kw...)
 
-function upload_table!(data::DataFrame, meta::OrderedDict{Symbol, DBColumn}, tbl_name::String; drop=true, temp=false, memory=false)
+function upload_table!(data::DataFrame, meta::OrderedDict{Symbol, DBColumn}, tbl_name::String;
+                       drop=true, temp=false, memory=false, engine=nothing, charset=nothing)
     coldefs = Vector{String}()
     for name in Symbol.(names(data))
         @info "Preparing column $name"
@@ -247,6 +248,8 @@ function upload_table!(data::DataFrame, meta::OrderedDict{Symbol, DBColumn}, tbl
         sql = "CREATE " * (temp ? "TEMPORARY" : "") * " TABLE $tbl_name"
         sql *= " ( " * join(coldefs, ", ") * ")"
         memory  &&  (sql *= " ENGINE=MEMORY")
+        isnothing(engine)  &&  (sql *= " ENGINE=$engine")
+        isnothing(charset)  &&  (sql *= " CHARACTER SET $charset")
         println(sql)
         DB(sql)
     end
