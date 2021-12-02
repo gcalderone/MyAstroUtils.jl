@@ -146,6 +146,18 @@ function smooth(y, n)
 end
 
 
+function rebin(y, n)
+    out = Float64[]
+    @assert mod(n, 2) == 1
+    @assert n >= 3
+    h = div(n-1, 2)
+    for i in 1+h:n:length(y)-h
+        push!(out, mean(y[i-h:i+h]))
+    end
+    return out
+end
+
+
 function ppvalunc(v, e)
     f = 10^ceil(-log10(e))
     pe = round(e * f) / f
