@@ -65,12 +65,17 @@ function readtdf(filename)
             end
             vv = line[icol]
 
-            if hasmissing  &&  (vv == "missing")
+            if hasmissing  &&  ((vv == "missing")  ||  (vv == ""))
                 push!(row, missing)
             elseif tt == "String"
                 push!(row, vv)
-            elseif (tt == "Bool")  ||
-                (tt == "UnitRange{Int64}")  ||
+            elseif tt == "Bool"
+                if (vv == "true")  ||  ((length(vv) != 0)  &&  (vv != "false"))
+                    push!(row, true)
+                else
+                    push!(row, false)
+                end
+            elseif (tt == "UnitRange{Int64}")  ||
                 (tt == "StepRange{Int64, Int64}")
                 push!(row, eval(Meta.parse(vv)))
             elseif tt == "Int64"
