@@ -252,8 +252,8 @@ function upload_table!(data::DataFrame, meta::OrderedDict{Symbol, DBColumn}, tbl
         sql = "CREATE " * (temp ? "TEMPORARY" : "") * " TABLE $tbl_name"
         sql *= " ( " * join(coldefs, ", ") * ")"
         memory  &&  (sql *= " ENGINE=MEMORY")
-        isnothing(engine)  &&  (sql *= " ENGINE=$engine")
-        isnothing(charset)  &&  (sql *= " CHARACTER SET $charset")
+        isnothing(engine)  ||  (sql *= " ENGINE=$engine")
+        isnothing(charset)  ||  (sql *= " CHARACTER SET $charset")
         println(sql)
         DB(sql)
     end
