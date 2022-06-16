@@ -163,6 +163,7 @@ DBColumn(data::Vector{Union{Missing,  Int64}}) = DBColumn(data, "  BIGINT   SIGN
 DBColumn(data::Vector{                Int64 }) = DBColumn(data, "  BIGINT   SIGNED")
 DBColumn(data::Vector{Union{Missing,   Bool}}) = DBColumn(data, "TINYINT    SIGNED")
 DBColumn(data::Vector{                 Bool }) = DBColumn(data, "TINYINT    SIGNED")
+DBColumn(data::BitVector                     ) = DBColumn(data, "TINYINT    SIGNED")
 
 function DBColumn(data::Vector{Union{Missing, Symbol}})
     i = findall(.!ismissing.(data))
