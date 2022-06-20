@@ -52,8 +52,8 @@ function DB(stmt, df::DataFrame)
     nothing
 end
 
-function DB(sql::AbstractString)
-    out = DataFrame(DBInterface.execute(DBconnect(), string(sql)))
+function DB(sql::AbstractString; buffered=false)
+    out = DataFrame(DBInterface.execute(DBconnect(), string(sql), mysql_store_result=buffered))
     if  (ncol(out) == 0)  &&
         (nrow(out) == 0)
         return nothing
