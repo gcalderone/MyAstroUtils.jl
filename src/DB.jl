@@ -54,8 +54,7 @@ end
 
 function DB(sql::AbstractString; buffered=false)
     out = DataFrame(DBInterface.execute(DBconnect(), string(sql), mysql_store_result=buffered))
-    if  (ncol(out) == 0)  &&
-        (nrow(out) == 0)
+    if  (nrow(out) == 0)
         return nothing
     end
     if  (ncol(out) == 1)  &&
@@ -230,10 +229,10 @@ upload_table!(data::DataFrame, tbl_name::String; kw...) =
     upload_table!(data, DBColumns(data), tbl_name; kw...)
 
 function upload_table!(data::DataFrame, meta::OrderedDict{Symbol, DBColumn}, tbl_name::String;
-                       drop=true, temp=false, memory=false, engine=nothing, charset=nothing)
+                       create=false, temp=false, memory=false, engine=nothing, charset=nothing)
     coldefs = Vector{String}()
     for name in Symbol.(names(data))
-        @info "Preparing column $name"
+        print("\rPreparing column $name ...")
         col = meta[name]
         if col.length == 0
             prepare_column!(data, col, name)
@@ -247,19 +246,28 @@ function upload_table!(data::DataFrame, meta::OrderedDict{Symbol, DBColumn}, tbl
             select!(data, Not(name))
         end
     end
+    println()
 
-    if drop
-        DB("DROP TABLE IF EXISTS $tbl_name")
+    if !create  &&  isnothing(DB("show tables like '$(tbl_name)'"))
+        println("Table $tbl_name do not exists, forcing creation...")
+        create = true
+    end
+    if create
         sql = "CREATE " * (temp ? "TEMPORARY" : "") * " TABLE $tbl_name"
         sql *= " ( " * join(coldefs, ", ") * ")"
-        memory  &&  (sql *= " ENGINE=MEMORY")
-        isnothing(engine)  ||  (sql *= " ENGINE=$engine")
+        if memory
+            sql *= " ENGINE=MEMORY"
+        else
+            isnothing(engine)  ||  (sql *= " ENGINE=$engine")
+        end
         isnothing(charset)  ||  (sql *= " CHARACTER SET $charset")
         println(sql)
         DB(sql)
     end
     params = join(repeat("?", ncol(data)), ",")
-    stmt = DBprepare("INSERT INTO $tbl_name VALUES ($params)")
+    sql = "INSERT INTO $tbl_name VALUES ($params)"
+    println(sql)
+    stmt = DBprepare(sql)
     DB(stmt, data)
     nothing
 end
