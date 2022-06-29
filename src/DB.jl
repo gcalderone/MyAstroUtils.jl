@@ -248,7 +248,15 @@ function upload_table!(data::DataFrame, meta::OrderedDict{Symbol, DBColumn}, tbl
     end
     println()
 
-    if !create  &&  isnothing(DB("show tables like '$(tbl_name)'"))
+    table_exists = true
+    try
+        # Can't use DB("show tables like '$(tbl_name)'") since it
+        # doesn't work with tbl_name in the form of DB.TABLE.
+        DB("SELECT * FROM $(tbl_name) LIMIT 0")
+    catch
+        table_exists = false
+    end
+    if !create  &&  !table_exists
         println("Table $tbl_name do not exists, forcing creation...")
         create = true
     end
