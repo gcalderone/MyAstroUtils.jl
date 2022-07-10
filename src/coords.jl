@@ -1,6 +1,6 @@
 using AstroLib, SkyCoords, SortMerge, Healpix, Printf
 
-export ra2string, dec2string, hms2ra, dms2dec, pixelized_area, pixel_id, pixel_area, pixel_total, xmatch, best_match
+export ra2string, dec2string, hms2ra, dms2dec, Jname2deg, pixelized_area, pixel_id, pixel_area, pixel_total, xmatch, best_match
 
 ra2string(d::Float64)  = @sprintf(" %02d:%02d:%05.2f", sixty(d/15.)...)
 dec2string(d::Float64) = (d < 0  ?  "-"  :  "+") * @sprintf("%02d:%02d:%05.2f", sixty(abs(d))...)
@@ -10,6 +10,22 @@ function dms2dec(S, d, m, s)
     @assert S in ["+", "-"]
     sign = (S == "+"  ?  1.  :  -1.)
     return sign * (d + m / 60 + s / 3600)
+end
+
+
+function Jname2deg(name)
+    @assert name[1] == 'J'
+    i = findfirst("+", name)
+    if isnothing(i)
+        i = findfirst("-", name)
+    end
+    i = i[1]
+    RAs = name[2:i-1]
+    DECs = name[i:end]
+    @assert RAs[ 7] == '.'
+    @assert DECs[8] == '.'
+    return ten(RAs[1:2] * ":" * RAs[3:4] * ":" * RAs[5:end]) * 15,
+    ten(DECs[1:3] * ":" * DECs[4:5] * ":" * DECs[6:end])
 end
 
 
