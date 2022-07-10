@@ -5,11 +5,11 @@ export ra2string, dec2string, hms2ra, dms2dec, Jname2deg, pixelized_area, pixel_
 ra2string(d::Float64)  = @sprintf(" %02d:%02d:%05.2f", sixty(d/15.)...)
 dec2string(d::Float64) = (d < 0  ?  "-"  :  "+") * @sprintf("%02d:%02d:%05.2f", sixty(abs(d))...)
 
-hms2ra(h, m, s) = (h + m / 60 + s / 3600) * 15
+hms2ra(h, m, s) = (h + m / 60. + s / 3600.) * 15.
 function dms2dec(S, d, m, s)
     @assert S in ["+", "-"]
     sign = (S == "+"  ?  1.  :  -1.)
-    return sign * (d + m / 60 + s / 3600)
+    return sign * (d + m / 60. + s / 3600.)
 end
 
 
