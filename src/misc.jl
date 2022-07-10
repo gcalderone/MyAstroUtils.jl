@@ -1,13 +1,21 @@
 using DataFrames, Unitful, UnitfulAstro, Statistics
 
-export compare_df, strip_blanks!, gpc
+export compare_df, strip_blanks!, gpc, showv
 
 
 gaussian(x, mean=0., sigma=1.) =
     (1 / sqrt(2pi) / sigma) * exp(-((x - mean) / sigma)^2 / 2)
 
-showv(df::DataFrameRow) =
-    show(DataFrame(field=names(df), value=[values(df)...]), allrows=true, allcols=true)
+function showv(df::DataFrame)
+    out = DataFrame(field=names(df))
+    for i in 1:nrow(df)
+        out[!, Symbol("Row", i)] .= [values(df[i, :])...]
+    end
+    show(out, allrows=true, allcols=true)
+end
+
+showv(df::DataFrameRow) = showv(DataFrame(df))
+
 
 function askpass(msg="")
     @assert Base.Sys.isunix()
