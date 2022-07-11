@@ -182,12 +182,14 @@ function DBColumn(data::Vector{Union{Missing, String}})
     else
         maxlen = maximum(length.(data[i]))
     end
-    return DBColumn(data, "VARCHAR($(maxlen))")
+    #return DBColumn(data, "VARCHAR($(maxlen))")
+    return DBColumn(data, "VARCHAR(65535)")
 end
 
 function DBColumn(data::Vector{String})
     maxlen = maximum(length.(data))
-    return DBColumn(data, "VARCHAR($(maxlen))")
+    #return DBColumn(data, "VARCHAR($(maxlen))")
+    return DBColumn(data, "VARCHAR(65535)")
 end
 
 
