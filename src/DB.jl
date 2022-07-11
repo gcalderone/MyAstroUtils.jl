@@ -175,21 +175,21 @@ DBColumn(data::Vector{Symbol}) =
 
 
 function DBColumn(data::Vector{Union{Missing, String}})
-    i = findall(.!ismissing.(data))
-    if length(i) == 0
-        @warn "All values are missing, assuming a length of 20"
-        maxlen = 20
-    else
-        maxlen = maximum(length.(data[i]))
-    end
-    #return DBColumn(data, "VARCHAR($(maxlen))")
-    return DBColumn(data, "VARCHAR(65535)")
+    # i = findall(.!ismissing.(data))
+    # if length(i) == 0
+    #     @warn "All values are missing, assuming a length of 20"
+    #     maxlen = 20
+    # else
+    #     maxlen = maximum(length.(data[i]))
+    # end
+    # return DBColumn(data, "VARCHAR($(maxlen))")
+    return DBColumn(data, "VARCHAR(65532) ASCII")
 end
 
 function DBColumn(data::Vector{String})
-    maxlen = maximum(length.(data))
-    #return DBColumn(data, "VARCHAR($(maxlen))")
-    return DBColumn(data, "VARCHAR(65535)")
+    # maxlen = maximum(length.(data))
+    # return DBColumn(data, "VARCHAR($(maxlen))")
+    return DBColumn(data, "VARCHAR(65532) ASCII")
 end
 
 
