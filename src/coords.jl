@@ -1,9 +1,22 @@
 using AstroLib, SkyCoords, SortMerge, Healpix, Printf
 
-export ra2string, dec2string, hms2ra, dms2dec, Jname2deg, pixelized_area, pixel_id, pixel_area, pixel_total, xmatch, best_match
+export ra2string, dec2string, string2ra, string2dec, hms2ra, dms2dec, Jname2deg, pixelized_area, pixel_id, pixel_area, pixel_total, xmatch, best_match
 
 ra2string(d::Float64)  = @sprintf(" %02d:%02d:%05.2f", sixty(d/15.)...)
 dec2string(d::Float64) = (d < 0  ?  "-"  :  "+") * @sprintf("%02d:%02d:%05.2f", sixty(abs(d))...)
+
+function string2ra(c::String)
+    s = Meta.parse.(split(strip(c), ':'))
+    @assert length(s) == 3
+    return hms2ra(s...)
+end
+
+function string2dec(c::String)
+    s = Meta.parse.(split(strip(c), ':'))
+    @assert length(s) == 3
+    return dms2dec((s[1] >= 0  ?  "+"  :  "-"),
+                   abs(s[1]), s[2], s[3])
+end
 
 hms2ra(h, m, s) = (h + m / 60. + s / 3600.) * 15.
 function dms2dec(S, d, m, s)
