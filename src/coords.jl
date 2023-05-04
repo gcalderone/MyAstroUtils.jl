@@ -124,6 +124,34 @@ function best_match(ra1::Vector{T1}, de1::Vector{T1},
 end
 
 
+function xmatch(tabA::DataFrame, coordsA::NTuple{2, Symbol},
+                tabB::DataFrame, coordsB::NTuple{2, Symbol},
+                thresh_arcsec::Real)
+    @assert issorted(tabA[:, coordsA[2]])
+    @assert issorted(tabB[:, coordsB[2]])
+
+    ra1 = tabA[:, coordsA[1]]
+    de1 = tabA[:, coordsA[2]]
+    ra2 = tabB[:, coordsB[1]]
+    de2 = tabB[:, coordsB[2]]
+    thresh_deg = thresh_arcsec / 3600. # [deg]
+
+    function sd(c1, c2, i1, i2)
+        dd = de1[i1] - de2[i2]
+        (dd < -thresh_deg)  &&  (return -1)
+        (dd >  thresh_deg)  &&  (return  1)
+        dd = gcirc(2,
+                   ra1[i1], de1[i1],
+                   ra2[i2], de2[i2])
+        (dd <= thresh_arcsec)  &&  (return 0)
+        return 999
+    end
+    out = sortmerge(1:nrow(tabA), 1:nrow(tabB),
+                    sd=sd, sorted=true)
+    return out
+end
+
+
 function xmatch(ra1::Vector{T1}, de1::Vector{T1},
                 ra2::Vector{T2}, de2::Vector{T2},
                 thresh_arcsec::Real; sorted=false) where
