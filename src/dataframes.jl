@@ -39,8 +39,8 @@ end
 
 function readtdf(filename)
     lines = readlines(filename)
-    names = Symbol.(strip.(split(lines[2], '|'))); names = names[2:end-1]
-    types = String.(strip.(split(lines[3], '|'))); types = types[2:end-1]
+    names = Symbol.(strip.(split(lines[2], '│'))); names = names[2:end-1]
+    types = String.(strip.(split(lines[3], '│'))); types = types[2:end-1]
     out = DataFrame()
     for icol in 1:length(names)
         tt = types[icol]

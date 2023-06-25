@@ -178,3 +178,15 @@ function ppvalunc(v, e)
     # println(v, " ", e, " ", f, " ", pv, " ", pe)
     return pv, pe
 end
+
+
+function splitrange(total_size, chunk_size)
+    out = Vector{NTuple{3, Int}}()
+    for ichunk in 1:Int(ceil(total_size / chunk_size))
+        i0 = (ichunk-1) * chunk_size + 1
+        i1 =         i0 + chunk_size - 1
+        (i1 > total_size)  &&  (i1 = total_size)
+        push!(out, (ichunk, i0, i1))
+    end
+    return out
+end
