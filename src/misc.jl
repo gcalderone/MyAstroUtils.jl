@@ -1,6 +1,6 @@
 using DataFrames, Unitful, UnitfulAstro, Statistics
 
-export compare_df, strip_blanks!, gpc, showv
+export compare_df, strip_blanks!, gpc, showv, splitrange
 
 
 gaussian(x, mean=0., sigma=1.) =
