@@ -12,10 +12,12 @@ function string2ra(c::String)
 end
 
 function string2dec(c::String)
+    sign = "+"
+    first = strip(c)[1]
+    (first == '-')  &&  (sign = "-")
     s = Meta.parse.(split(strip(c), ':'))
     @assert length(s) == 3
-    return dms2dec((s[1] >= 0  ?  "+"  :  "-"),
-                   abs(s[1]), s[2], s[3])
+    return dms2dec(sign, abs(s[1]), s[2], s[3])
 end
 
 hms2ra(h, m, s) = (h + m / 60. + s / 3600.) * 15.
