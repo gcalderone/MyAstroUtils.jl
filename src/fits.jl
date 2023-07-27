@@ -60,6 +60,9 @@ function write(f::FITSIO.FITS, dfr::DataFrame)
             push!(data, string.(df[:, name]))
         elseif tt <: Dates.AbstractTime
             push!(data, string.(df[:, name]))
+        elseif tt <: UInt64
+            @warn "Converting UInt64 to Int64 for field $name"
+            push!(data, Int64.(df[:, name]))
         else
             push!(data, df[:, name])
         end
