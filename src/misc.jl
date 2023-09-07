@@ -190,3 +190,33 @@ function splitrange(total_size, chunk_size)
     end
     return out
 end
+
+
+function csv2df(filename; sep=',')
+    @info "Using sep" sep
+    df = DataFrame()
+    count = 0
+    colnames = Vector{String}()
+    for line in collect(strip.(readlines(filename)))
+        count += 1
+        (line[1] == '#')  &&  continue
+        data = String.(collect(split(line, sep, keepempty=true)))
+        (length(data) == 0)  &&  continue
+        if length(colnames) == 0
+            @assert length(data) > 0
+            append!(colnames, data)
+            @info "Detected $(length(colnames)) column names"
+        else
+            if length(colnames) > length(data)
+                printstyled("Row $count ($(nrow(df)+1) on output table) contains only $(length(data)) column(s), filling with empty strings...\n", color=:yellow)
+                append!(df, Pair.(colnames, [data, fill("", length(colnames) - length(data))...]))
+            elseif length(colnames) == length(data)
+                append!(df, Pair.(colnames, data))
+            else
+                printstyled("Row $count ($(nrow(df)+1) on output table) contains $(length(data)) columns, ignoring $(length(data) - length(colnames)) trailing ones...\n", color=:red)
+                append!(df, Pair.(colnames, data[1:length(colnames)]))
+            end
+        end
+    end
+    return df
+end
