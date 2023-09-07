@@ -200,10 +200,16 @@ function csv2df(args...; delim=',', header=nothing, kws...)
         df = CSV.File(args...;                delim=delim, kws...) |> DataFrame
     end
 
-    # Replace columns containing just missing values with empty strings
     for i in 1:ncol(df)
+        # Replace columns containing just missing values with empty strings
         if eltype(df[:, i]) == Missing
             df[!, i] .= ""
+        end
+
+        # Replace non-String columns with String
+        if  (eltype(df[:, i]) <: AbstractString)  &&
+            (eltype(df[:, i]) != String)
+            df[!, i] .= convert(Vector{String}, df[:, i])
         end
     end
 
