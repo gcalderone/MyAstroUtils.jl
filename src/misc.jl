@@ -192,24 +192,18 @@ function splitrange(total_size, chunk_size)
 end
 
 
-function csv2df(args...; delim=',', header=nothing, kws...)
+function csv2df(args...; delim=',', header=nothing, stringtype=String, kws...)
     # Invoke CSV.File
     if isa(header, Vector{Symbol})
-        df = CSV.File(args...; header=header, delim=delim, kws...) |> DataFrame
+        df = CSV.File(args...; header=header, delim=delim, stringtype=stringtype, kws...) |> DataFrame
     else
-        df = CSV.File(args...;                delim=delim, kws...) |> DataFrame
+        df = CSV.File(args...;                delim=delim, stringtype=stringtype, kws...) |> DataFrame
     end
 
     for i in 1:ncol(df)
         # Replace columns containing just missing values with empty strings
         if eltype(df[:, i]) == Missing
             df[!, i] .= ""
-        end
-
-        # Replace non-String columns with String
-        if  (eltype(df[:, i]) <: AbstractString)  &&
-            (eltype(df[:, i]) != String)
-            df[!, i] .= convert(Vector{String}, df[:, i])
         end
     end
 
