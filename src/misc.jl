@@ -1,4 +1,4 @@
-using DataFrames, Unitful, UnitfulAstro, Statistics
+using DataFrames, Unitful, UnitfulAstro, Statistics, CSV
 
 export compare_df, strip_blanks!, gpc, showv, splitrange
 
@@ -192,31 +192,31 @@ function splitrange(total_size, chunk_size)
 end
 
 
-function csv2df(filename; sep=',')
-    @info "Using sep" sep
-    df = DataFrame()
-    count = 0
-    colnames = Vector{String}()
-    for line in collect(strip.(readlines(filename)))
-        count += 1
-        (line[1] == '#')  &&  continue
-        data = String.(collect(split(line, sep, keepempty=true)))
-        (length(data) == 0)  &&  continue
-        if length(colnames) == 0
-            @assert length(data) > 0
-            append!(colnames, data)
-            @info "Detected $(length(colnames)) column names"
-        else
-            if length(colnames) > length(data)
-                printstyled("Row $count ($(nrow(df)+1) on output table) contains only $(length(data)) column(s), filling with empty strings...\n", color=:yellow)
-                append!(df, Pair.(colnames, [data, fill("", length(colnames) - length(data))...]))
-            elseif length(colnames) == length(data)
-                append!(df, Pair.(colnames, data))
-            else
-                printstyled("Row $count ($(nrow(df)+1) on output table) contains $(length(data)) columns, ignoring $(length(data) - length(colnames)) trailing ones...\n", color=:red)
-                append!(df, Pair.(colnames, data[1:length(colnames)]))
-            end
+function csv2df(args...; delim=',', header=nothing, kws...)
+    # Invoke CSV.File
+    if isa(header, Vector{Symbol})
+        df = CSV.File(args...; header=header, delim=delim, kws...) |> DataFrame
+    else
+        df = CSV.File(args...;                delim=delim, kws...) |> DataFrame
+    end
+
+    # Replace columns containing just missing values with empty strings
+    for i in 1:ncol(df)
+        if eltype(df[:, i]) == Missing
+            df[!, i] .= ""
         end
+    end
+
+    # Join all columns past the last given one into a single one
+    if isa(header, Vector{Symbol})    &&
+        (ncol(df) > length(header))   &&
+        (nonmissingtype(eltype(df[:, length(header)])) == String)
+        for i in 1:nrow(df)
+            t = Tuple(df[i, length(header):ncol(df)])
+            all(ismissing.(t))  &&  continue
+            df[i, length(header)] = join(string.(skipmissing(t)), delim)
+        end
+        select!(df, 1:length(header))
     end
     return df
 end
