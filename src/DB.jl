@@ -52,7 +52,12 @@ function DB(stmt, df::DataFrame)
     nothing
 end
 
-function DB(sql::AbstractString; buffered=false)
+#=
+Note: using mysql_store_result=false may produce unexpected and
+unexplicable errors on the client side, which can be solved only by
+closing and re-opening the connection.
+=#
+function DB(sql::AbstractString; buffered=true)
     out = DataFrame(DBInterface.execute(DBconnect(), string(sql), mysql_store_result=buffered))
     if  (nrow(out) == 0)
         return nothing
