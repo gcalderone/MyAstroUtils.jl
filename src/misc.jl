@@ -1,4 +1,4 @@
-using DataFrames, Unitful, UnitfulAstro, Statistics, CSV
+using DataFrames, Unitful, UnitfulAstro, Statistics, CSV, StatsBase
 
 export compare_df, strip_blanks!, gpc, showv, splitrange
 
