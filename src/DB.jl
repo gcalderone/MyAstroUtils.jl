@@ -1,39 +1,67 @@
 using DataFrames, MySQL, DBInterface, ProgressMeter, DataStructures
 
-export DBconnect, DBclose, DBtransaction, DBprepare, DB, @DB_str, DBsource, upload_table!
+export DBconnect, DBreconnect, DBclose, DBtransaction, DBprepare, DB, @DB_str, DBsource, upload_table!
 
 
-const DBConn = Vector{DBInterface.Connection}()
-DBconnect() = DBConn[end]
+struct DBLoginInfo
+    host::String
+    user::Union{Nothing, String}
+    pass::Union{Nothing, String}
+    dbname::Union{Nothing, String}
 
-function DBclose()
-    DBInterface.close!.(DBConn)
-    empty!(DBConn)
+    function DBLoginInfo(host; user=nothing, pass=nothing, dbname=nothing)
+        if !isnothing(user)  &&  isnothing(pass)
+            pass = askpass("Enter password for DB user $user")
+        end
+        return new(host, user, pass, dbname)
+    end
 end
 
-function DBconnect(host; user=nothing, pass=nothing, dbname=nothing)
+
+mutable struct DBGlobal
+    conn::Union{Nothing, DBInterface.Connection}
+    stored_login::Union{Nothing, DBLoginInfo}
+    DBGlobal() = new(nothing, nothing)
+end
+const dbglobal = DBGlobal()
+
+
+function DBclose()
+    if !isnothing(dbglobal.conn)
+        DBInterface.close!(dbglobal.conn)
+        dbglobal.conn = nothing
+    end
+end
+
+
+function DBconnect(args...; store_login=false, kws...)
+    login = DBLoginInfo(args...; kws...)
+    store_login  &&  (dbglobal.stored_login = login)
+    return DBconnect(login)
+end
+
+function DBconnect(login::DBLoginInfo)
     DBclose()
-
-    if !isnothing(user)  &&  isnothing(pass)
-        pass = askpass("Enter password for DB user $user")
-    end
-    conn = DBInterface.connect(MySQL.Connection, host, user, pass)
-
-    # "Driver={MariaDB};SERVER=127.0.0.1"
-    #conn = ODBC.Connection(host *
-    #                       (isnothing(user)  ?  ""  :  ";USER=" * user * (
-    #                           isnothing(pass)  ?  ""  :  ";PWD=" * pass)))
-    push!(DBConn, conn)
-
-    if !isnothing(dbname)
-        DB("USE $dbname")
-    end
+    dbglobal.conn = DBInterface.connect(MySQL.Connection, login.host, login.user, login.pass)
+    isnothing(login.dbname)  ||  DB("USE $(login.dbname)")
     nothing
 end
 
 
-DBtransaction(f) = MySQL.transaction(f, DBconnect())
-DBprepare(sql::AbstractString) = DBInterface.prepare(DBconnect(), string(sql))
+function DBreconnect()
+    @assert !isnothing(dbglobal.stored_login) "No stored login to perform automatic connection"
+    DBconnect(dbglobal.stored_login)
+end
+
+
+function DBCurrentConnection()
+    @assert !isnothing(dbglobal.conn) "No connection opened, call DBconnect(...)"
+    return dbglobal.conn
+end
+
+
+DBtransaction(f) = MySQL.transaction(f, DBCurrentConnection())
+DBprepare(sql::AbstractString) = DBInterface.prepare(DBCurrentConnection(), string(sql))
 
 DB(stmt, params...) = DBInterface.execute(stmt, params)
 function DB(stmt, df::DataFrame)
@@ -57,8 +85,8 @@ Note: using mysql_store_result=false may produce unexpected and
 unexplicable errors on the client side, which can be solved only by
 closing and re-opening the connection.
 =#
-function DB(sql::AbstractString; buffered=true)
-    out = DataFrame(DBInterface.execute(DBconnect(), string(sql), mysql_store_result=buffered))
+function DB(sql::AbstractString; store_on_client=true)
+    out = DataFrame(DBInterface.execute(DBCurrentConnection(), string(sql), mysql_store_result=store_on_client))
     if  (nrow(out) == 0)
         return nothing
     end
