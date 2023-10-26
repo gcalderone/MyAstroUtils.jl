@@ -32,7 +32,7 @@ b = DataFrame(a=[0,2,3],                   c=["foo", "dummy"  , "aaa"])
 MyAstroUtils.compare_df(a, b)
 =#
 
-function diff_dataframe(a::DataFrame, b::DataFrame; verbose=false, diffopt="-s -w")
+function diff_dataframe(a::DataFrame, b::DataFrame; verbose=false, diffopt="-s -w --color=always")
     if ncol(a) != ncol(b)
         @warn "Number of cols is different: " ncol(a) ncol(b)
     end
@@ -77,6 +77,7 @@ function diff_dataframe(a::DataFrame, b::DataFrame; verbose=false, diffopt="-s -
     cmd = `diff $diffopt $fna $fnb`
     println(cmd)
     try
+        run(`head -n 1 $fna`)
         run(`diff $diffopt $fna $fnb`)
     catch
     end
