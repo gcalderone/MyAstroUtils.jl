@@ -1,4 +1,4 @@
-using DataFrames, Unitful, UnitfulAstro, Statistics, CSV, StatsBase
+using DataFrames, Unitful, UnitfulAstro, Statistics, CSV, StatsBase, PrettyTables
 
 export compare_df, strip_blanks!, gpc, showv, splitrange
 
@@ -26,16 +26,19 @@ function askpass(msg="")
 end
 
 
-function compare_df(a::DataFrame, b::DataFrame)
+#=
+a = DataFrame(a=[1,  2], b=["one", "two"], c=["foo", "missing"       ])
+b = DataFrame(a=[0,2,3],                   c=["foo", "dummy"  , "aaa"])
+MyAstroUtils.compare_df(a, b)
+=#
+
+function diff_dataframe(a::DataFrame, b::DataFrame; verbose=false, diffopt="-s -w")
     if ncol(a) != ncol(b)
         @warn "Number of cols is different: " ncol(a) ncol(b)
     end
-    if nrow(a) != nrow(b)
-        @warn "Number of rows is different: " nrow(a) nrow(b)
-    end
+
     na = names(a)
     nb = names(b)
-
     function sd(v1, v2, i1, i2)
         if v1[i1] < v2[i2]
             return -1
@@ -45,41 +48,42 @@ function compare_df(a::DataFrame, b::DataFrame)
         return 1
     end
     jj = sortmerge(na, nb, sd=sd)
-    if  (length(jj[1]) < length(na))  ||
-        (length(jj[2]) < length(nb))
-        @warn "Only " * string(length(jj[1])) * " columns have the same name"
+
+    ii = findall(countmatch(jj, 1) .== 0)
+    if length(ii) > 0
+        @warn "Columns present only in A: " * join(string.(na[ii]))
     end
+    ii = findall(countmatch(jj, 2) .== 0)
+    if length(ii) > 0
+        @warn "Columns present only in B: " * join(string.(nb[ii]))
+    end
+
+    # Considering only common columns
+    na = na[sort(jj[1])]
+    nb = nb[sort(jj[2])]
 
     if nrow(a) != nrow(b)
-        @warn "Number of rows is different"
-    else
-        for i in 1:length(jj[1])
-            colname = string(na[jj[1][i]])
-            @info colname
-            da = a[:, jj[1][i]]
-            db = b[:, jj[2][i]]
-
-            k = findall(ismissing.(da) .!= ismissing.(db))
-            if length(k) != 0
-                @warn string(length(k)) * " rows have different missing condition on column $colname"
-            else
-                if count(.!ismissing.(da)) > 0
-                    da = disallowmissing(collect(skipmissing(da)))
-                    db = disallowmissing(collect(skipmissing(db)))
-
-                    (length(da) == 0)  &&  continue
-                    if eltype(da) <: AbstractFloat
-                        k = findall(da .!== db)  # handle NaNs
-                    else
-                        k = findall(da .!= db)  # handle NaNs
-                    end
-                    if length(k) != 0
-                        @warn string(length(k)) * " rows have different values on column $colname"
-                    end
-                end
-            end
-        end
+        @warn "Number of rows is different: " nrow(a) nrow(b)
     end
+    fna = tempname()
+    fnb = tempname()
+    f = open(fna, "w")
+    pretty_table(f, a[:, na], backend=Val(:text), tf=tf_borderless)
+    close(f)
+    f = open(fnb, "w")
+    pretty_table(f, b[:, nb], backend=Val(:text), tf=tf_borderless)
+    close(f)
+    diffopt = collect(split(diffopt, ' ', keepempty=false))
+    cmd = `diff $diffopt $fna $fnb`
+    println(cmd)
+    try
+        run(`diff $diffopt $fna $fnb`)
+    catch
+    end
+    print("Press ENTER...")
+    readline()
+    rm(fna)
+    rm(fnb)
 end
 
 
