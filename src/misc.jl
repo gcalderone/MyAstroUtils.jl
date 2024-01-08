@@ -1,4 +1,4 @@
-using DataFrames, Unitful, UnitfulAstro, Statistics, CSV, StatsBase, PrettyTables
+using DataFrames, Unitful, UnitfulAstro, Statistics, CSV, StatsBase, PrettyTables, Printf
 
 export compare_df, strip_blanks!, gpc, showv, splitrange
 
@@ -233,4 +233,14 @@ function countmapdf(vv)
     out = DataFrame(:value => collect(keys(cm)), :count => collect(values(cm)))
     sort!(out, :count)
     return out
+end
+
+
+function print_struct_size(s)
+    @info typeof(s)
+    for n in fieldnames(typeof(s))
+        f = getfield(s, n)
+        @printf "%20s: %12.3f MB  (%s)\n" n Base.summarysize(f) / (1024^2) string(typeof(f))
+    end
+    @printf "%20s: %12.3f MB\n" "Total" Base.summarysize(s) / (1024^2)
 end

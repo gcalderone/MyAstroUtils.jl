@@ -1,30 +1,60 @@
 using AstroLib, SkyCoords, SortMerge, Healpix, Printf
 
-export ra2string, dec2string, string2ra, string2dec, hms2ra, dms2dec, Jname2deg, pixelized_area, pixel_id, pixel_area, pixel_total, xmatch, best_match
+export ra2string, dec2string, string2ra, string2dec, deg2dms, dms2deg, Jname2deg, pixelized_area, pixel_id, pixel_area, pixel_total, xmatch, best_match
 
-ra2string(d::Float64)  = @sprintf(" %02d:%02d:%05.2f", sixty(d/15.)...)
-dec2string(d::Float64) = (d < 0  ?  "-"  :  "+") * @sprintf("%02d:%02d:%05.2f", sixty(abs(d))...)
 
-function string2ra(c::String)
-    s = Meta.parse.(split(strip(c), ':'))
-    @assert length(s) == 3
-    return hms2ra(s...)
+#=
+Test the following with:
+
+@assert deg2dms(dms2deg(1, 359, 59, 59.9999), round_decimals=2) == (1, 0, 0, 0.0)
+@assert deg2dms(dms2deg(1, 359, 59, 59.9999), round_decimals=3) == (1, 0, 0, 0.0)
+@assert deg2dms(dms2deg(1, 359, 59, 59.9999), round_decimals=4) == (1, 359, 59, 59.9999)
+@assert deg2dms(dms2deg(-1, 359, 59, 59.9999), round_decimals=2) == (-1, 0, 0, 0.0)
+
+cc = DB("SELECT RAd, DECd FROM All_info")
+cc[!, :RAs]   = ra2string.( cc.RAd);
+cc[!, :DECs]  = dec2string.(cc.DECd);
+cc[!, :RAd2]  = string2ra.( cc.RAs);
+cc[!, :DECd2] = string2dec.(cc.DECs);
+extrema(cc.RAd .- cc.RAd2)     # (-2.0833333564951317e-6, 2.0833333564951317e-6)
+extrema(cc.DECd .- cc.DECd2)   # (-1.3888888901192331e-6, 1.3888888901192331e-6)
+
+dms2deg(1, 0, 0, 0.0005) * 15  # 2.083333333333333e-6
+dms2deg(1, 0, 0, 0.005)        # 1.388888888888889e-6
+=#
+
+
+function deg2dms(deg::Float64; round_decimals=3)
+    @assert round_decimals >= 1
+    s = sixty(abs(deg))
+    d = Int(s[1])
+    m = Int(s[2])
+    s = round(s[3] * 10^round_decimals) / 10^round_decimals
+    if s >= 60
+        newangle = dms2deg(1, d, m, s + 1 / 10^(round_decimals+1))
+        newangle = mod(newangle, 360.)
+        _, d, m, s = deg2dms(newangle, round_decimals=round_decimals)
+    end
+    @assert 0 <= d <= 359
+    @assert 0 <= m <=  59
+    @assert 0 <= s <   60
+    return (Int(sign(deg)), d, m, s)
 end
 
-function string2dec(c::String)
-    sign = "+"
-    first = strip(c)[1]
-    (first == '-')  &&  (sign = "-")
-    s = Meta.parse.(split(strip(c), ':'))
-    @assert length(s) == 3
-    return dms2dec(sign, abs(s[1]), s[2], s[3])
+dms2deg(sign::Int, d::Int, m::Int, s::Float64) = sign * (d + m / 60. + s / 3600.)
+
+ra2string(deg::Float64) = @sprintf("%02d:%02d:%06.3f", deg2dms(deg/15., round_decimals=3)[2:4]...)
+string2ra(string::String) = dms2deg(1, Meta.parse.(split(strip(string), ':'))...) * 15.
+
+function dec2string(deg::Float64)
+    sign, d, m, s = deg2dms(deg, round_decimals=2)
+    signsym = (sign ==- 1  ?  "-"  :  "+")
+    return signsym * @sprintf("%02d:%02d:%05.2f", d, m, s)
 end
 
-hms2ra(h, m, s) = (h + m / 60. + s / 3600.) * 15.
-function dms2dec(S, d, m, s)
-    @assert S in ["+", "-"]
-    sign = (S == "+"  ?  1.  :  -1.)
-    return sign * (d + m / 60. + s / 3600.)
+function string2dec(string::String)
+    d, m, s = Meta.parse.(split(strip(string), ':'))
+    return dms2deg(strip(string)[1] == '-'  ?  -1  :  1, abs(d), m, s)
 end
 
 
