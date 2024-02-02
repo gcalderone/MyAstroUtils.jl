@@ -249,3 +249,38 @@ function xmatch(ra1::Vector{T1}, de1::Vector{T1}, thresh_arcsec1::Vector{<:Real}
                     sd=sd, sorted=sorted)
     return out
 end
+
+
+function sortmerge_cases(jj)
+    unmatchedA = findall(countmatch(jj, 1) .== 0)
+    unmatchedB = findall(countmatch(jj, 2) .== 0)
+
+    multiplicityA = countmatch(jj, 1)[jj[1]]
+    multiplicityB = countmatch(jj, 2)[jj[2]]
+
+    singlematched = SortMerge.subset(jj,
+                                     findall((multiplicityA .== 1)  .&
+                                             (multiplicityB .== 1)))
+    ambiguousA    = SortMerge.subset(jj,
+                                     findall((multiplicityA .>  1)  .&
+                                             (multiplicityB .== 1)))
+    ambiguousB    = SortMerge.subset(jj,
+                                     findall((multiplicityA .== 1)  .&
+                                             (multiplicityB .>  1)))
+    return (unmatchedA, unmatchedB, singlematched, ambiguousA, ambiguousB)
+end
+
+#=
+a = [1,2,2,3,4]
+b = [2,3,3,4,5]
+jj = sortmerge(a, b)
+unmatchedA, unmatchedB, singlematched, ambiguousA, ambiguousB = sortmerge_cases(jj)
+@assert a[unmatchedA] == [1]
+@assert b[unmatchedB] == [5]
+@assert a[singlematched[1]] == [4]
+@assert b[singlematched[2]] == [4]
+@assert a[ambiguousA[1]] == [3,3]
+@assert b[ambiguousA[2]] == [3,3]
+@assert a[ambiguousB[1]] == [2,2]
+@assert b[ambiguousB[2]] == [2,2]
+=#
