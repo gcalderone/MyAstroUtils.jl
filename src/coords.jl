@@ -1,6 +1,6 @@
 using AstroLib, SkyCoords, SortMerge, Healpix, Printf
 
-export ra2string, dec2string, string2ra, string2dec, deg2dms, dms2deg, Jname2deg, pixelized_area, pixel_id, pixel_area, pixel_total, xmatch, best_match
+export ra2string, dec2string, string2ra, string2dec, deg2dms, dms2deg, Jname2deg, pixelized_area, pixel_id, pixel_area, pixel_total, xmatch, best_match, sortmerge_cases
 
 
 #=
@@ -252,35 +252,44 @@ end
 
 
 function sortmerge_cases(jj)
-    unmatchedA = findall(countmatch(jj, 1) .== 0)
-    unmatchedB = findall(countmatch(jj, 2) .== 0)
+    # Not matched
+    nmA = findall(countmatch(jj, 1) .== 0)
+    nmB = findall(countmatch(jj, 2) .== 0)
 
+    # Multiplicity of matched entries from both sides
     multiplicityA = countmatch(jj, 1)[jj[1]]
     multiplicityB = countmatch(jj, 2)[jj[2]]
 
-    singlematched = SortMerge.subset(jj,
-                                     findall((multiplicityA .== 1)  .&
-                                             (multiplicityB .== 1)))
-    ambiguousA    = SortMerge.subset(jj,
-                                     findall((multiplicityA .>  1)  .&
-                                             (multiplicityB .== 1)))
-    ambiguousB    = SortMerge.subset(jj,
-                                     findall((multiplicityA .== 1)  .&
-                                             (multiplicityB .>  1)))
-    return (unmatchedA, unmatchedB, singlematched, ambiguousA, ambiguousB)
+    # Single matched
+    sm  = SortMerge.subset(jj, findall((multiplicityA .== 1)  .&
+                                       (multiplicityB .== 1)))
+
+    # Multiple matched on one side, single match on the other
+    mmA = SortMerge.subset(jj, findall((multiplicityA .>  1)  .&
+                                       (multiplicityB .== 1)))
+    mmB = SortMerge.subset(jj, findall((multiplicityA .== 1)  .&
+                                       (multiplicityB .>  1)))
+
+    # Multiple matched on both sides
+    mm  = SortMerge.subset(jj, findall((multiplicityA .>  1)  .&
+                                       (multiplicityB .>  1)))
+
+    return (nmA=nmA, nmB=nmB, sm=sm, mmA=mmA, mmB=mmB, mm=mm)
 end
 
 #=
-a = [1,2,2,3,4]
-b = [2,3,3,4,5]
+a = [1,2,2,3,4,6,6]
+b = [6,6,2,3,3,4,5]
 jj = sortmerge(a, b)
-unmatchedA, unmatchedB, singlematched, ambiguousA, ambiguousB = sortmerge_cases(jj)
-@assert a[unmatchedA] == [1]
-@assert b[unmatchedB] == [5]
-@assert a[singlematched[1]] == [4]
-@assert b[singlematched[2]] == [4]
-@assert a[ambiguousA[1]] == [3,3]
-@assert b[ambiguousA[2]] == [3,3]
-@assert a[ambiguousB[1]] == [2,2]
-@assert b[ambiguousB[2]] == [2,2]
+cc = sortmerge_cases(jj)
+@assert a[cc.nmA] == [1]
+@assert b[cc.nmB] == [5]
+@assert a[cc.sm[1]] == [4]
+@assert b[cc.sm[2]] == [4]
+@assert a[cc.mmA[1]] == [3,3]
+@assert b[cc.mmA[2]] == [3,3]
+@assert a[cc.mmB[1]] == [2,2]
+@assert b[cc.mmB[2]] == [2,2]
+@assert a[cc.mm[1]] == [6,6,6,6]
+@assert b[cc.mm[2]] == [6,6,6,6]
 =#
