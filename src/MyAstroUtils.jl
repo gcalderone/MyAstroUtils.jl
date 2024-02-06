@@ -9,5 +9,6 @@ include("misc.jl")
 include("coords.jl")
 include("fits.jl")
 include("DB.jl")
+include("pycall.jl")
 
 end # module

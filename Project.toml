@@ -16,6 +16,7 @@ MySQL = "39abe10b-433b-5dbd-92d4-e302a9df00cd"
 PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SkyCoords = "fc659fc5-75a3-5475-a2ea-3da92c065361"
 SortMerge = "041a2d23-8c6e-5597-be73-bf96b5e0dfd4"
@@ -25,5 +26,3 @@ StructC14N = "d2514e9c-36c4-5b8e-97e2-51e7675c221c"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 UnitfulAstro = "6112ee07-acf9-5e0f-b108-d242c714bf9f"
 WCS = "15f3aee2-9e10-537f-b834-a6fb8bdb944d"
-
-[compat]
