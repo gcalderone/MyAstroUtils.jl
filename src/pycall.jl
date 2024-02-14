@@ -2,6 +2,23 @@ using PyCall, DataFrames
 
 export read_votable, tap_query
 
+
+#=
+Example:
+url = "https://api.skymapper.nci.org.au/public/tap"
+
+for glon in 0:359
+    sql = "SELECT * FROM dr4.master WHERE glon >= $glon AND glon < $(glon+1) AND ABS(glat)>25"
+    file = "skym4_$(glon).votable"
+    @info sql
+    if !isfile(file * ".gz")
+        file = tap_query(url, sql, output_format="votable", output_file=file)
+        run(`gzip $file`)
+    end
+end
+=#
+
+
 function read_votable(filename::String)
     VOTable = pyimport("astropy.io.votable")
     votable = VOTable.parse(filename)
@@ -35,5 +52,3 @@ function tap_query(url::String, query::String;
     pybuiltin("print")(job)
     return output_file
 end
-
-
