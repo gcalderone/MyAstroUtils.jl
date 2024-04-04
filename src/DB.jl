@@ -1,7 +1,7 @@
 using DataFrames, MySQL, DBInterface, ProgressMeter, DataStructures
 using IniFile
 
-export DBconnect, DBreconnect, DBclose, DBtransaction, DBprepare, DB, @DB_str, DBsource, upload_table!
+export DBconnect, DBclose, DBtransaction, DBprepare, DB, @DB_str, DBsource, upload_table!
 
 
 struct DBLoginInfo
@@ -27,7 +27,6 @@ end
 
 mutable struct DBGlobal
     conn::Union{Nothing, DBInterface.Connection}
-    stored_login::Union{Nothing, DBLoginInfo}
     DBGlobal() = new(nothing, nothing)
 end
 const dbglobal = DBGlobal()
@@ -41,9 +40,8 @@ function DBclose()
 end
 
 
-function DBconnect(args...; store_login=false, kws...)
+function DBconnect(args...; kws...)
     login = DBLoginInfo(args...; kws...)
-    store_login  &&  (dbglobal.stored_login = login)
     return DBconnect(login)
 end
 
@@ -52,12 +50,6 @@ function DBconnect(login::DBLoginInfo)
     dbglobal.conn = DBInterface.connect(MySQL.Connection, login.host, login.user, login.pass)
     isnothing(login.dbname)  ||  DB("USE $(login.dbname)")
     nothing
-end
-
-
-function DBreconnect()
-    @assert !isnothing(dbglobal.stored_login) "No stored login to perform automatic connection"
-    DBconnect(dbglobal.stored_login)
 end
 
 
