@@ -27,7 +27,7 @@ end
 
 mutable struct DBGlobal
     conn::Union{Nothing, DBInterface.Connection}
-    DBGlobal() = new(nothing, nothing)
+    DBGlobal() = new(nothing)
 end
 const dbglobal = DBGlobal()
 
