@@ -1,4 +1,5 @@
 using DataFrames, MySQL, DBInterface, ProgressMeter, DataStructures
+using IniFile
 
 export DBconnect, DBreconnect, DBclose, DBtransaction, DBprepare, DB, @DB_str, DBsource, upload_table!
 
@@ -9,10 +10,16 @@ struct DBLoginInfo
     pass::Union{Nothing, String}
     dbname::Union{Nothing, String}
 
-    function DBLoginInfo(host; user=nothing, pass=nothing, dbname=nothing)
-        if !isnothing(user)  &&  isnothing(pass)
-            pass = askpass("Enter password for DB user $user")
-        end
+    function DBLoginInfo(; dbname=nothing)
+        ini = read(Inifile(), joinpath(ENV["HOME"], ".my.cnf"))
+        host = get(ini, "client-mariadb", "host", nothing)
+        user = get(ini, "client-mariadb", "user", nothing)
+        pass = get(ini, "client-mariadb", "password", nothing)
+        return new(host, user, pass, dbname)
+    end
+
+    function DBLoginInfo(host, user; dbname=nothing)
+        pass = askpass("Enter password for DB user $user")
         return new(host, user, pass, dbname)
     end
 end
