@@ -8,7 +8,7 @@ DataFrame(hdu::FITSIO.ImageHDU) = error("Can not convert an ImageHDU extension t
 function DataFrame(hdu::FITSIO.HDU)
     fld = join.(split.(FITSIO.colnames(hdu), '.'), '_')
     out = DataFrame()
-		@showprogress 0.5 for i in 1:length(fld)
+    @showprogress 0.5 for i in 1:length(fld)
         tmp = read(hdu, (FITSIO.colnames(hdu))[i])
         if ndims(tmp) == 1
             out[!, Symbol(fld[i])] = tmp
