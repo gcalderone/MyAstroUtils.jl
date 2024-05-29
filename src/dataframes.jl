@@ -1,5 +1,13 @@
 using PrettyTables
-export writetdf, readtdf
+export writetdf, readtdf, add_column_with_missing!
+
+
+function add_column_with_missing!(df::DataFrame, colname, column::AbstractVector)
+    df[!, colname] .= fill(skipmissing(column)[1], nrow(df))
+    allowmissing!(df, colname)
+    df[:, colname] .= missing
+    return df
+end
 
 
 function writetdf(filename, df)

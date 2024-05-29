@@ -231,6 +231,7 @@ end
 function countmapdf(vv)
     cm = countmap(vv)
     out = DataFrame(:value => collect(keys(cm)), :count => collect(values(cm)))
+    out[!, :fraction] = out.count ./ sum(out.count)
     sort!(out, :count)
     return out
 end
