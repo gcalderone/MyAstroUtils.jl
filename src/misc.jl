@@ -1,6 +1,6 @@
 using DataFrames, Unitful, UnitfulAstro, Statistics, CSV, StatsBase, PrettyTables, Printf
 
-export compare_df, strip_blanks!, gpc, showv, splitrange
+export diff_dataframe, strip_blanks!, gpc, showv, splitrange
 
 
 gaussian(x, mean=0., sigma=1.) =
@@ -29,7 +29,7 @@ end
 #=
 a = DataFrame(a=[1,  2], b=["one", "two"], c=["foo", "missing"       ])
 b = DataFrame(a=[0,2,3],                   c=["foo", "dummy"  , "aaa"])
-MyAstroUtils.compare_df(a, b)
+MyAstroUtils.diff_dataframe(a, b)
 =#
 
 function diff_dataframe(a::DataFrame, b::DataFrame; verbose=false, diffopt="-s -w --color=always")
