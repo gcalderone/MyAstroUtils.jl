@@ -2,8 +2,14 @@ using PrettyTables
 export writetdf, readtdf, add_column_with_missing!
 
 
-function add_column_with_missing!(df::DataFrame, colname, column::AbstractVector)
-    df[!, colname] .= fill(skipmissing(column)[1], nrow(df))
+add_column_with_missing!(df::DataFrame, colname, ::Val{T}) where T <: Real = add_column_with_missing!(df, colname, T(0))
+add_column_with_missing!(df::DataFrame, colname, ::Val{String})            = add_column_with_missing!(df, colname, "")
+add_column_with_missing!(df::DataFrame, colname, ::Val{Symbol})            = add_column_with_missing!(df, colname, :a)
+
+function add_column_with_missing!(df::DataFrame, colname, value::T) where T
+    @assert !(T <: AbstractVector)
+    @assert !ismissing(value)
+    df[!, colname] .= fill(value, nrow(df))
     allowmissing!(df, colname)
     df[:, colname] .= missing
     return df
