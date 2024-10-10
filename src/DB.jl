@@ -1,7 +1,9 @@
 using DataFrames, MySQL, DBInterface, ProgressMeter, DataStructures
 using IniFile
+using DuckDB
 
 export DBconnect, DBclose, DBtransaction, DBprepare, DB, @DB_str, DBsource, upload_table!
+export my_read_parquet, my_write_parquet
 
 
 struct DBLoginInfo
@@ -312,4 +314,26 @@ function upload_table!(data::DataFrame, meta::OrderedDict{Symbol, DBColumn}, tbl
     stmt = DBprepare(sql)
     DB(stmt, data)
     nothing
+end
+
+
+function my_read_parquet(filename)
+    conn = DuckDB.DB()
+    nn = DataFrame(DuckDB.execute(conn,
+                                  "DESCRIBE SELECT * FROM read_parquet('data.parq')"))[:, 1]
+    df = DataFrame()
+    for n in nn
+        df[!, Symbol(n)] = DuckDB.toDataFrame(
+            DuckDB.execute(conn,
+                "SELECT $n FROM read_parquet('$(filename)')"))[1]
+        GC.gc()
+    end
+    return df
+end
+
+
+function my_write_parquet(filename, df)
+    conn = DuckDB.DB()
+    DuckDB.register_table(conn, df, "tmp")
+    DuckDB.execute(conn, "COPY tmp TO '$(filename)' (FORMAT PARQUET)")
 end
