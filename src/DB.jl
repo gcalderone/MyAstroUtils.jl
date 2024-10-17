@@ -320,7 +320,7 @@ end
 function my_read_parquet(filename)
     conn = DuckDB.DB()
     nn = DataFrame(DuckDB.execute(conn,
-                                  "DESCRIBE SELECT * FROM read_parquet('data.parq')"))[:, 1]
+                                  "DESCRIBE SELECT * FROM read_parquet($(filename))"))[:, 1]
     df = DataFrame()
     for n in nn
         df[!, Symbol(n)] = DuckDB.toDataFrame(
