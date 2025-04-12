@@ -310,15 +310,16 @@ function upload_table!(data::DataFrame, meta::OrderedDict{Symbol, DBColumn}, tbl
 end
 
 
-function my_read_parquet(filename)
+function my_read_parquet(filename; maxrows=nothing)
     conn = DuckDB.DB()
     nn = DataFrame(DuckDB.execute(conn,
                                   "DESCRIBE SELECT * FROM read_parquet($(filename))"))[:, 1]
     df = DataFrame()
+    limit = (isnothing(maxrows)  ?  ""  :  "LIMIT $maxrows")
     for n in nn
         df[!, Symbol(n)] = DuckDB.toDataFrame(
             DuckDB.execute(conn,
-                "SELECT $n FROM read_parquet('$(filename)')"))[1]
+                "SELECT $n FROM read_parquet('$(filename)') $limit"))[1]
         GC.gc()
     end
     return df
