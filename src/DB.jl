@@ -2,7 +2,7 @@ using DataFrames, MySQL, DBInterface, ProgressMeter, DataStructures
 using IniFile
 using DuckDB
 
-export DBconnect, DBclose, DBtransaction, DBprepare, DB, @DB_str, DBsource, upload_table!
+export DBconnect, DBclose, DBprepare, DB, @DB_str, DBsource, upload_table!
 export my_read_parquet, my_write_parquet
 
 
@@ -27,42 +27,39 @@ struct DBLoginInfo
 end
 
 
-mutable struct DBGlobal
-    conn::Union{Nothing, DBInterface.Connection}
-    DBGlobal() = new(nothing)
-end
-const dbglobal = DBGlobal()
+const globalconn = Vector{DBInterface.Connection}()
 
 
 function DBclose()
-    if !isnothing(dbglobal.conn)
-        DBInterface.close!(dbglobal.conn)
-        dbglobal.conn = nothing
+    if length(globalconn) == 1
+        DBclose(globalconn[1])
+        empty!(globalconn)
     end
 end
+DBclose(conn::DBInterface.Connection) = DBInterface.close!(conn)
 
 
-function DBconnect(args...; kws...)
-    login = DBLoginInfo(args...; kws...)
-    return DBconnect(login)
-end
 
-function DBconnect(login::DBLoginInfo)
-    DBclose()
-    dbglobal.conn = DBInterface.connect(MySQL.Connection, login.host, login.user, login.pass)
-    isnothing(login.dbname)  ||  DB("USE $(login.dbname)")
-    nothing
-end
-
-
-function DBCurrentConnection()
-    @assert !isnothing(dbglobal.conn) "No connection opened, call DBconnect(...)"
-    return dbglobal.conn
+DBconnect(args...; store_global=false, kws...) =
+    DBconnect(DBLoginInfo(args...; kws...), store_global=store_global)
+function DBconnect(login::DBLoginInfo; store_global=false)
+    conn = DBInterface.connect(MySQL.Connection, login.host, login.user, login.pass)
+    isnothing(login.dbname)  ||  DB("USE $(login.dbname)", conn=conn)
+    if store_global
+        DBclose()
+        push!(globalconn, conn)
+    end
+    return conn
 end
 
 
-DBtransaction(f) = MySQL.transaction(f, DBCurrentConnection())
-DBprepare(sql::AbstractString) = DBInterface.prepare(DBCurrentConnection(), string(sql))
+function DBGlobalConnection()
+    @assert length(globalconn) == 1 "No connection opened, call DBconnect(..., store_global=true)"
+    return globalconn[1]
+end
+
+
+DBprepare(sql::AbstractString; conn=DBGlobalConnection()) = DBInterface.prepare(conn, string(sql))
 
 DB(stmt, params...) = DBInterface.execute(stmt, params)
 function DB(stmt, df::DataFrame)
@@ -72,11 +69,9 @@ function DB(stmt, df::DataFrame)
     (barlen > 50)  &&  (barlen = 50)
     prog = Progress(nrow(df), desc=desc, dt=0.5, color=:light_black, barlen=barlen,
                     barglyphs=BarGlyphs('|','█', ['▏','▎','▍','▌','▋','▊','▉'],' ','|',))
-    DBtransaction() do
-        for (i, row) in enumerate(Tables.rows(df))
-            ProgressMeter.update!(prog, i)
-            DBInterface.execute(stmt, Tables.Row(row))
-        end
+    for (i, row) in enumerate(Tables.rows(df))
+        ProgressMeter.update!(prog, i)
+        DBInterface.execute(stmt, Tables.Row(row))
     end
     nothing
 end
@@ -86,8 +81,8 @@ Note: using mysql_store_result=false may produce unexpected and
 unexplicable errors on the client side, which can be solved only by
 closing and re-opening the connection.
 =#
-function DB(sql::AbstractString; store_on_client=true)
-    out = DataFrame(DBInterface.execute(DBCurrentConnection(), string(sql), mysql_store_result=store_on_client))
+function DB(sql::AbstractString; store_on_client=true, conn=DBGlobalConnection())
+    out = DataFrame(DBInterface.execute(conn, string(sql), mysql_store_result=store_on_client))
     if  (nrow(out) == 0)
         return nothing
     end
@@ -98,11 +93,8 @@ function DB(sql::AbstractString; store_on_client=true)
     return out
 end
 
-macro DB_str(sql)
-    return :(DB($sql))
-end
 
-function DBsource(file::AbstractString, subst::Vararg{Pair{String,String}, N}) where N
+function DBsource(file::AbstractString, subst::Vararg{Pair{String,String}, N}; conn=DBGlobalConnection()) where N
     delim = ";"
     sql = ""
     for line in readlines(file)
@@ -123,7 +115,7 @@ function DBsource(file::AbstractString, subst::Vararg{Pair{String,String}, N}) w
                     sql = replace(sql, r)
                 end
                 println(sql)
-                DB(sql)
+                DB(sql, conn=conn)
                 sql = ""
                 (s[2] != "")  &&  (sql = s[2] * "\n")
             else
@@ -136,7 +128,7 @@ function DBsource(file::AbstractString, subst::Vararg{Pair{String,String}, N}) w
             sql = replace(sql, r)
         end
         println(sql)
-        DB(sql)
+        DB(sql, conn=conn)
     end
 end
 
@@ -261,10 +253,11 @@ function DBColumns(data::DataFrame)
     return out
 end
 
-upload_table!(data::DataFrame, tbl_name::String; kw...) =
-    upload_table!(data, DBColumns(data), tbl_name; kw...)
+upload_table!(data::DataFrame, tbl_name::String; conn=DBGlobalConnection(), kw...) =
+    upload_table!(data, DBColumns(data), tbl_name; conn=conn, kw...)
 
 function upload_table!(data::DataFrame, meta::OrderedDict{Symbol, DBColumn}, tbl_name::String;
+                       conn=DBGlobalConnection(),
                        create=false, temp=false, memory=false, engine=nothing, charset=nothing)
     coldefs = Vector{String}()
     for name in Symbol.(names(data))
@@ -288,7 +281,7 @@ function upload_table!(data::DataFrame, meta::OrderedDict{Symbol, DBColumn}, tbl
     try
         # Can't use DB("show tables like '$(tbl_name)'") since it
         # doesn't work with tbl_name in the form of DB.TABLE.
-        DB("SELECT * FROM $(tbl_name) LIMIT 0")
+        DB("SELECT * FROM $(tbl_name) LIMIT 0", conn=conn)
     catch
         table_exists = false
     end
@@ -306,12 +299,12 @@ function upload_table!(data::DataFrame, meta::OrderedDict{Symbol, DBColumn}, tbl
         end
         isnothing(charset)  ||  (sql *= " CHARACTER SET $charset")
         println(sql)
-        DB(sql)
+        DB(sql, conn=conn)
     end
     params = join(repeat("?", ncol(data)), ",")
     sql = "INSERT INTO $tbl_name VALUES ($params)"
     println(sql)
-    stmt = DBprepare(sql)
+    stmt = DBprepare(sql, conn=conn)
     DB(stmt, data)
     nothing
 end
