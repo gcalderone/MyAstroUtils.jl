@@ -2,7 +2,7 @@ using DataFrames, MySQL, DBInterface, ProgressMeter, DataStructures
 using IniFile
 using DuckDB
 
-export DBconnect, DBclose, DBprepare, DB, @DB_str, DBsource, upload_table!
+export DBconnect, DBGlobalConnection, DBclose, DBprepare, DB, @DB_str, DBsource, upload_table!
 export my_read_parquet, my_write_parquet
 
 
@@ -63,6 +63,10 @@ DBprepare(sql::AbstractString; conn=DBGlobalConnection()) = DBInterface.prepare(
 
 DB(stmt, params...) = DBInterface.execute(stmt, params)
 function DB(stmt, df::DataFrame)
+    for i in 1:ncol(df)
+        t = eltype(df[:, i])
+        @assert nonmissingtype(t) in [Int64, Float64, Float32, String, Dates.DateTime] "Prepared statement on type $t (column $(names(df)[i])) may have undefined behaviour.  Aborting."
+    end
     desc = split(stmt.sql)[1] * join(fill(" ", 9))
     desc = desc[1:9] * " "
     barlen = ProgressMeter.tty_width(desc, stderr, false)
