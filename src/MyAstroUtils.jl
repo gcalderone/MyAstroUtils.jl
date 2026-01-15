@@ -11,5 +11,6 @@ include("fits.jl")
 include("DB.jl")
 # include("pycall.jl")
 include("dataframes.jl")
+include("largefiles.jl")
 
 end # module

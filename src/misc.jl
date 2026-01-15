@@ -68,10 +68,10 @@ function diff_dataframe(a::DataFrame, b::DataFrame; verbose=false, diffopt="-s -
     fna = tempname()
     fnb = tempname()
     f = open(fna, "w")
-    pretty_table(f, a[:, na], backend=Val(:text), tf=tf_borderless)
+    pretty_table(f, a[:, na])
     close(f)
     f = open(fnb, "w")
-    pretty_table(f, b[:, nb], backend=Val(:text), tf=tf_borderless)
+    pretty_table(f, b[:, nb])
     close(f)
     diffopt = collect(split(diffopt, ' ', keepempty=false))
     cmd = `diff $diffopt $fna $fnb`
