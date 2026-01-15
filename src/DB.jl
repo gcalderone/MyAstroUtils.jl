@@ -262,7 +262,7 @@ upload_table!(data::DataFrame, tbl_name::String; conn=DBGlobalConnection(), kw..
 
 function upload_table!(data::DataFrame, meta::OrderedDict{Symbol, DBColumn}, tbl_name::String;
                        conn=DBGlobalConnection(),
-                       create=false, temp=false, memory=false, engine=nothing, charset=nothing)
+                       create=false, temp=false, memory=false, engine="Aria", charset=nothing)
     coldefs = Vector{String}()
     for name in Symbol.(names(data))
         print("\rPreparing column $name ...")
