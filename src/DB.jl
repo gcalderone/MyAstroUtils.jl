@@ -262,7 +262,7 @@ upload_table!(data::DataFrame, tbl_name::String; conn=DBGlobalConnection(), kw..
 
 function upload_table!(data::DataFrame, meta::OrderedDict{Symbol, DBColumn}, tbl_name::String;
                        conn=DBGlobalConnection(),
-                       create=false, temp=false, memory=false, engine=nothing, charset=nothing)
+                       create=false, temp=false, memory=false, engine=nothing, charset=nothing, mysqlimport=false)
     coldefs = Vector{String}()
     for name in Symbol.(names(data))
         print("\rPreparing column $name ...")
@@ -305,11 +305,22 @@ function upload_table!(data::DataFrame, meta::OrderedDict{Symbol, DBColumn}, tbl
         println(sql)
         DB(sql, conn=conn)
     end
-    params = join(repeat("?", ncol(data)), ",")
-    sql = "INSERT INTO $tbl_name VALUES ($params)"
-    println(sql)
-    stmt = DBprepare(sql, conn=conn)
-    DB(stmt, data)
+
+    if !mysqlimport
+        params = join(repeat("?", ncol(data)), ",")
+        sql = "INSERT INTO $tbl_name VALUES ($params)"
+        println(sql)
+        stmt = DBprepare(sql, conn=conn)
+        DB(stmt, data)
+    else
+        s = split(tbl_name, ".")
+        @assert length(s) == 2
+        db_name = string(s[1])
+        tbl_name = string(s[2])
+        CSV.write("/tmp/$(tbl_name).txt", data, writeheader=false, delim='\t')
+        println("cd /tmp; mysqlimport --local --delete $db_name $(tbl_name).txt")
+        error("Table not yet uploaded! (please run the above command)")
+    end
     nothing
 end
 
