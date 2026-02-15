@@ -74,6 +74,19 @@ function Jname2deg(name)
 end
 
 
+function healpix_numbers()
+    @printf("%6s  %12s  %12s  %12s\n", "Order", "Npix", "Area [deg^2]", "Size [arcsec]")
+    rad = 180/pi
+    for order in 0:18
+        nside = 2^order
+        res = Healpix.Resolution(nside)
+        area = nside2pixarea(nside) * rad^2
+        size = sqrt(area) * 3600.
+        @printf("%6d  %12d  %12.4f  %12.4f\n", order, res.numOfPixels, area, size)
+    end
+end
+
+
 function pixelized_area(RAd, DECd)
     rad = 180/pi
     @printf("%6s  %12s  %12s  %12s\n", "Order", "Npix", "Area [deg^2]", "% diff")

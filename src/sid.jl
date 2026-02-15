@@ -8,6 +8,5 @@ function SID_conesearch(table::String, id::Vector{Int}, RAd::Vector{T}, DECd::Ve
     for i in 1:length(RAd)
         DB("CALL SID.AddCone($(id[i]), $(RAd[i]), $(DECd[i]), $(radius_arcsec[i]) / 60.)")
     end
-    sql = DB("SELECT SID.get_query()")
-    DB(sql)
+    DB("CALL SID.RunQuery()")
 end
