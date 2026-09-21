@@ -281,14 +281,21 @@ function upload_table!(data::DataFrame, meta::OrderedDict{Symbol, DBColumn}, tbl
     end
     println()
 
-    table_exists = true
-    try
-        # Can't use DB("show tables like '$(tbl_name)'") since it
-        # doesn't work with tbl_name in the form of DB.TABLE.
-        DB("SELECT * FROM $(tbl_name) LIMIT 0", conn=conn)
-    catch
+    if isnothing(conn)
         table_exists = false
+        create = true
+        mysqlimport = true
+        else
+        table_exists = true
+        try
+            # Can't use DB("show tables like '$(tbl_name)'") since it
+            # doesn't work with tbl_name in the form of DB.TABLE.
+            DB("SELECT * FROM $(tbl_name) LIMIT 0", conn=conn)
+        catch
+            table_exists = false
+        end
     end
+
     if !create  &&  !table_exists
         println("Table $tbl_name do not exists, forcing creation...")
         create = true
@@ -303,7 +310,7 @@ function upload_table!(data::DataFrame, meta::OrderedDict{Symbol, DBColumn}, tbl
         end
         isnothing(charset)  ||  (sql *= " CHARACTER SET $charset")
         println(sql)
-        DB(sql, conn=conn)
+        !isnothing(conn)  &&  DB(sql, conn=conn)
     end
 
     if !mysqlimport
