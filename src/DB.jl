@@ -8,6 +8,7 @@ export my_read_parquet, my_write_parquet
 
 struct DBLoginInfo
     host::String
+    port::Integer
     user::Union{Nothing, String}
     pass::Union{Nothing, String}
     dbname::Union{Nothing, String}
@@ -15,6 +16,7 @@ struct DBLoginInfo
     function DBLoginInfo(; dbname=nothing)
         ini = read(Inifile(), joinpath(ENV["HOME"], ".my.cnf"))
         host = get(ini, "client-mariadb", "host", nothing)
+        port = get(ini, "client-mariadb", "port", 3306)
         user = get(ini, "client-mariadb", "user", nothing)
         pass = get(ini, "client-mariadb", "password", nothing)
         return new(host, user, pass, dbname)
@@ -22,7 +24,12 @@ struct DBLoginInfo
 
     function DBLoginInfo(host, user; dbname=nothing)
         pass = askpass("Enter password for DB user $user")
-        return new(host, user, pass, dbname)
+        return new(host, 3306, user, pass, dbname)
+    end
+
+    function DBLoginInfo(host, port::Int, user; dbname=nothing)
+        pass = askpass("Enter password for DB user $user")
+        return new(host, port, user, pass, dbname)
     end
 end
 
@@ -43,7 +50,7 @@ DBclose(conn::DBInterface.Connection) = DBInterface.close!(conn)
 DBconnect(args...; store_global=false, kws...) =
     DBconnect(DBLoginInfo(args...; kws...), store_global=store_global)
 function DBconnect(login::DBLoginInfo; store_global=false)
-    conn = DBInterface.connect(MySQL.Connection, login.host, login.user, login.pass)
+    conn = DBInterface.connect(MySQL.Connection, login.host, login.user, login.pass, port=login.port)
     isnothing(login.dbname)  ||  DB("USE $(login.dbname)", conn=conn)
     if store_global
         DBclose()
